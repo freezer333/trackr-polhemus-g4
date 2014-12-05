@@ -3,6 +3,9 @@
 ## Manual
 [ftp://ftp.polhemus.com/pub/G4/G4%20User%20Manual%20URM10PH238-D.pdf](User Manual).
 
+## Full Windows SDK
+The full SDK can be found at [ftp://ftp.polhemus.com/pub/Standalone/](ftp://ftp.polhemus.com/pub/Standalone/)
+
 ## Windows drivers
 These are the bare-bones G4 drivers - install them first...
 [ftp://ftp.polhemus.com/pub/G4/SWC-50402-10-1.0.5-G4TRACK_WIN.zip](ftp://ftp.polhemus.com/pub/G4/SWC-50402-10-1.0.5-G4TRACK_WIN.zip)
