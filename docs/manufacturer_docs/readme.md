@@ -1,7 +1,4 @@
 # Polhemus G4 FTP Links for the SDK 
-For reasons unknown to this author, Polhemus makes it hard to find
-and access their SDK software.  Below is the FTP links that have 
-the SDK (although these are not kept up to date...).
 
 ## Manual
 [ftp://ftp.polhemus.com/pub/G4/G4%20User%20Manual%20URM10PH238-D.pdf](User Manual).
