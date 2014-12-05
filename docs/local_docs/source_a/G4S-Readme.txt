@@ -1,0 +1,2 @@
+This .g4s file can only be used on host computer systems with the G4 Host Software installed.
+Use the CreateSrcCfgFileMFC utility to generate Source Configuration (.g4c) files for G4 runtime operation.
