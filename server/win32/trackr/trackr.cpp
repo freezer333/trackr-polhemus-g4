@@ -15,6 +15,9 @@
 #include <string>
 #include <iostream>
 #include "PDI.h"
+
+#include "tracker_props.h"
+
 using namespace std;
 typedef basic_string<TCHAR> tstring;
 #if defined(UNICODE) || defined(_UNICODE)
@@ -53,7 +56,7 @@ typedef enum
 #define ENTER 0x0d
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-BOOL		Initialize			( VOID );
+void		Initialize			(  );
 BOOL		Connect				( VOID );
 VOID		Disconnect			( VOID );
 BOOL		SetupDevice			( VOID );
@@ -77,224 +80,52 @@ VOID OptionsPrompt( VOID );
 //BYTE	g_pMotionBuf[0x0800];  // 2K worth of data.  == 73 frames of XYZAER
 BYTE	g_pMotionBuf[BUFFER_SIZE]; 
 TCHAR	g_G4CFilePath[_MAX_PATH+1];
-#define DEFAULT_G4C_PATH _T("C:\\Polhemus\\G4 Files\\default.g4c")
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 int _tmain(int argc, TCHAR* argv[])
 {
-	eMenuChoice eChoice = CHOICE_NONE;
-	BOOL		bDisconnect = TRUE;
-	
-	if (!(Initialize()))
-	{
-	}
 
-	else if (CnxPrompt() == CHOICE_QUIT)
-	{
-		eChoice = CHOICE_QUIT;
-		bDisconnect = FALSE;
-	}
+	int connection_tries = 0;
+	bool failed;
+	do {
+		failed = false;
+		Initialize();
+		if (!failed &&  !Connect() ) {
+			std::cerr << "Error connecting to g4 tracker" << endl;
+			failed = true;
+		}
+		else if (!failed &&  !SetupDevice()) {
+			std::cerr << "Error setting up g4 tracker" << endl;
+			failed = true;
+		}
+		else if (!failed &&  !StartCont() ) {
+			std::cerr << "Error initiating continous polling of g4 tracker" << endl;
+			failed = true;
+		}
+		if ( failed ) {
+			std::cerr << "... waiting 5 seconds to retry..." << endl;
+			Sleep(5000);  
+		}
+	} while ( connection_tries < 20 && failed );
 
-	//Connect To Tracker
-	else if (!( Connect()))
-	{
-		tcout << _T("Connect ");
-		tcout << g_G4CFilePath << _T(" Failed. ") << endl;
-	}
-
-	//Configure Tracker
-	else if (!( SetupDevice()))
-	{
-	}
-	else
-	{
-		//Wait for go-ahead for cont mode
-		ShowMenu();
-		do
-		{
-			eChoice = Prompt();
-
-			switch (eChoice)
-			{
-			case CHOICE_CONT:
-				//Start Cont Mode
-				if (!(StartCont()))
-				{
-				}
-				else
-				{
-					//Collect/Display Tracker Data until ESC
-					DisplayCont();
-					StopCont();
-				}
-
-				break;
-
-			case CHOICE_SINGLE:
-				DisplaySingle();
-				break;
-
-			case CHOICE_HUBMAP:
-				UpdateStationMap();
-				break;
-
-			case CHOICE_OPTIONS:
-				OptionsPrompt();
-				break;
-
-			default:
-				break;
-			}
-
-		} while (eChoice != CHOICE_QUIT);
-
-
-	}
-
-	INT ch;
-
-	if (eChoice == CHOICE_NONE)
-	{
-		tcout << _T("\n\nPress any key to exit. ") << endl;
-		ch = _gettche();
-		tcout << (TCHAR)ch << endl;
-	}
-
-	//Close Tracker Connection
-	if (bDisconnect)
-		Disconnect();
-
+	DisplayCont();
+	StopCont();
+	Disconnect();
 	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-BOOL Initialize( VOID )
+void Initialize(  )
 {
-	BOOL	bRet = TRUE;
-
 	g_pdiDev.Trace(TRUE, 7);
-
-	::SetConsoleTitle( _T("G4console") );
-
-	_tcsncpy_s(g_G4CFilePath, _countof(g_G4CFilePath), DEFAULT_G4C_PATH, _tcslen(DEFAULT_G4C_PATH));
-
+	_tcsncpy_s(g_G4CFilePath, _countof(g_G4CFilePath), G4C_PATH, _tcslen(G4C_PATH));
 	g_bCnxReady = FALSE;
 	g_dwStationMap = 0;
 	g_ePNOOriUnits = E_PDI_ORI_QUATERNION;
-
-	return bRet;
-}
-/////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////
-eMenuChoice CnxPrompt( VOID )
-{
-	BOOL bQuit = FALSE;
-	eMenuChoice eChoice = CHOICE_NONE;
-
-	do
-	{
-		tcout << _T("Connecting to G4 using G4 Source Config File: ");
-		tcout << g_G4CFilePath << endl;
-		tcout << _T("Press\n Enter to continue,\n ESC to quit,\n or type in new .g4c file pathname followed by Enter.") << endl;
-		tcout << _T(">> ");
-
-		INT ch;
-
-		ch = _gettche();
-		
-		switch (ch)
-		{
-		case ESC:
-			eChoice = CHOICE_QUIT;
-			bQuit = TRUE;
-			break;
-		case ENTER:
-			eChoice = CHOICE_ENTER;
-			break;
-		default:
-			{
-				//_ungettch( ch );
-
-				TCHAR newpath[_MAX_PATH+1];
-				size_t newsize;
-
-				newpath[0] = (TCHAR)ch;
-				if (0 == _cgetts_s(&newpath[1], _MAX_PATH, &newsize))
-				{
-					eChoice = CHOICE_ENTER;
-					_tcsncpy_s(g_G4CFilePath, newpath, newsize+1);
-				}
-
-			}
-			break;
-		}
-
-	} while (eChoice == CHOICE_NONE);
-
-	return eChoice;
 }
 
-VOID ShowOptionsMenu( VOID )
-{
-	tcout << _T("\n\nPlease select a command option: \n\n");
-	tcout << _T("E or e:  Output Ori Euler Angles (degrees)\n");
-	tcout << _T("R or r:  Output Ori Euler Angles (radians)\n");
-	tcout << _T("Q or q:  Output Ori Quaternion (default)\n");
-	tcout << _T("C or c:  Output Pos CM\n");
-	tcout << _T("I or i:  Output Pos Inches (default)\n");
-	tcout << _T("Enter:   Redisplay Options Menu\n");
-	tcout << endl;
-	tcout << _T("ESC:     Exit Options Menu\n");
-}
-/////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////
-VOID OptionsPrompt( VOID )
-{
-	BOOL bQuit = FALSE;
-
-	ShowOptionsMenu();
-	do
-	{
-		INT ch;
-
-		tcout << _T("\nEe/Rr/Qq/Cc/Ii/ESC>> ");
-		ch = _getche();
-		ch = toupper( ch );
-	
-		switch (ch)
-		{
-		case ESC:
-			bQuit = TRUE;
-			break;
-		case ENTER:
-			ShowOptionsMenu();
-			break;
-		case 'E':
-			SetOriUnits(E_PDI_ORI_EULER_DEGREE);
-			break;
-		case 'R':
-			SetOriUnits(E_PDI_ORI_EULER_RADIAN);
-			break;
-		case 'Q':
-			SetOriUnits(E_PDI_ORI_QUATERNION);
-			break;
-		case 'C':
-			SetPosUnits(E_PDI_POS_CM);
-			break;
-		case 'I':
-			SetPosUnits(E_PDI_POS_INCH);
-			break;
-		default:
-			tcout << _T("\nUnsupported Selection\n");
-			break;
-		}
-
-	} while (bQuit == FALSE);
-
-
-}
 
 VOID SetOriUnits( ePDIoriUnits eO )
 {

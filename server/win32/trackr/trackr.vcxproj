@@ -70,6 +70,9 @@
   <ItemGroup>
     <ClCompile Include="trackr.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="tracker_props.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
