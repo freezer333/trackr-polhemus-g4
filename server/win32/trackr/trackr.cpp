@@ -11,6 +11,7 @@
 
 
 #include <string>
+#include <mutex>
 #include <iostream>
 #include "PDI.h"
 
@@ -30,7 +31,7 @@ CPDIg4		g_pdiDev;
 DWORD		g_dwFrameSize;
 BOOL		g_bCnxReady;
 DWORD		g_dwStationMap;
-DWORD		g_dwLastHostFrameCount;
+DWORD		last_frame_number;
 ePDIoriUnits g_ePNOOriUnits;
 
 
@@ -38,17 +39,6 @@ ePDIoriUnits g_ePNOOriUnits;
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-typedef enum
-{
-	CHOICE_CONT
-	, CHOICE_SINGLE
-	, CHOICE_QUIT
-	, CHOICE_ENTER
-	, CHOICE_HUBMAP
-	, CHOICE_OPTIONS
-
-	, CHOICE_NONE = -1
-} eMenuChoice;
 
 #define ESC	0x1b
 #define ENTER 0x0d
@@ -61,23 +51,32 @@ BOOL		SetupDevice			( VOID );
 VOID		UpdateStationMap	( VOID );
 VOID		AddMsg				( tstring & );
 VOID		AddResultMsg		( LPCTSTR );
-VOID		ShowMenu			( VOID );	
-eMenuChoice Prompt				( VOID );
 BOOL		StartCont			( VOID );
 BOOL		StopCont			( VOID );	
 VOID		DisplayCont			( VOID );
-VOID		DisplaySingle		( VOID );
 VOID		ParseG4NativeFrame	( PBYTE, DWORD );
-eMenuChoice		CnxPrompt			( VOID );
-VOID SetOriUnits( ePDIoriUnits eO );
-VOID SetPosUnits( ePDIposUnits eP );
-VOID ShowOptionsMenu( VOID );
-VOID OptionsPrompt( VOID );
 
 #define BUFFER_SIZE 0x1FA400   // 30 seconds of xyzaer+fc 8 sensors at 240 hz 
 //BYTE	g_pMotionBuf[0x0800];  // 2K worth of data.  == 73 frames of XYZAER
 BYTE	g_pMotionBuf[BUFFER_SIZE]; 
 TCHAR	g_G4CFilePath[_MAX_PATH+1];
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+struct porec {
+	int frame_number;
+	float pos[3];
+	float ori[3];
+} ;
+
+mutex update_mutex;
+struct porec sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
+
+#define PRINT_RECORDS false
+
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -98,10 +97,11 @@ int main()
 		return START_POLLING_FAILURE;
 	}
 	
-	
+	cout << "g4 server started, connect on named pipe 'trackr_g4'" << endl;
 	DisplayCont();
 	StopCont();
 	Disconnect();
+	cout << "g4 server shutdown" << endl;
 	return 0;
 }
 
@@ -113,7 +113,7 @@ void Initialize(  )
 	_tcsncpy_s(g_G4CFilePath, _countof(g_G4CFilePath), G4C_PATH, _tcslen(G4C_PATH));
 	g_bCnxReady = FALSE;
 	g_dwStationMap = 0;
-	g_ePNOOriUnits = E_PDI_ORI_QUATERNION;
+	g_ePNOOriUnits = E_PDI_ORI_EULER_DEGREE;
 }
 
 
@@ -219,7 +219,7 @@ BOOL StartCont( VOID )
 	}
 
 	g_pdiDev.ResetHostFrameCount();
-	g_dwLastHostFrameCount = 0;
+	last_frame_number = 0;
 
 	if (!(g_pdiDev.StartContPnoG4(0)))
 	{
@@ -255,53 +255,44 @@ BOOL StopCont( VOID )
 /////////////////////////////////////////////////////////////////////
 VOID DisplayCont( VOID )
 {
-	BOOL bExit = FALSE;
+	bool exit = false;
 
-	//tcout << _T("\nPress any key to start continuous display\r\n");
-	//tcout << _T("\nPress ESC to stop.\r\n");
-	//tcout << _T("\nReady? ");
-	//_getche();
-	//tcout << endl;
-
-	INT  count = 10;
-	PBYTE pBuf;
-	DWORD dwSize;
-	DWORD dwFC;
+	PBYTE sample;
+	DWORD sample_buffer_size;
+	DWORD current_frame_count;
 
 	do
 	{
-		if (!(g_pdiDev.LastHostFrameCount( dwFC )))
+		if (!(g_pdiDev.LastHostFrameCount( current_frame_count )))
 		{
 			AddResultMsg(_T("LastHostFrameCount"));
-			bExit = TRUE;
+			exit = true;
 		}
-		else if (dwFC == g_dwLastHostFrameCount)
+		else if (current_frame_count == last_frame_number)
 		{
 			// no new frames since last peek
 		}
-		else if (!(g_pdiDev.LastPnoPtr( pBuf, dwSize )))
+		else if (!(g_pdiDev.LastPnoPtr( sample, sample_buffer_size )))
 		{
 			AddResultMsg(_T("LastPnoPtr"));
-			bExit = TRUE;
+			exit = true;
 		}
-		else if ((pBuf == 0) || (dwSize == 0))
+		else if ((sample == 0) || (sample_buffer_size == 0))
 		{
+			// no sample was obtained...
 		}
 		else 
 		{
-			g_dwLastHostFrameCount = dwFC;
-			ParseG4NativeFrame( pBuf, dwSize );
+			last_frame_number = current_frame_count;
+			ParseG4NativeFrame( sample, sample_buffer_size );
 		}
 
 		if ( _kbhit() && ( _getch() == ESC ) ) 
 		{
-			bExit = TRUE;
+			exit = true;
 		}
 
-		if (count == 0)
-			bExit = TRUE;
-
-	} while (!bExit);
+	} while (!exit);
 
 }
 /////////////////////////////////////////////////////////////////////
@@ -322,53 +313,53 @@ VOID DisplayCont( VOID )
 
 void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 {
-	if ((!pBuf) || (!dwSize))
-	{}
-	else
-	{
-		DWORD i= 0;
-		LPG4_HUBDATA	pHubFrame;
+	
+	if (!pBuf || !dwSize)
+	{ 
+		return;
+	}
+	DWORD i= 0;
+	LPG4_HUBDATA	pHubFrame;
+	while (i < dwSize ) {
+		pHubFrame = (LPG4_HUBDATA)(&pBuf[i]);
 
-		while (i < dwSize )
+		i += sizeof(G4_HUBDATA);
+
+		UINT	nHubID = pHubFrame->nHubID;
+		UINT	nFrameNum =  pHubFrame->nFrameCount;
+		UINT	nSensorMap = pHubFrame->dwSensorMap;
+		UINT	nDigIO = pHubFrame->dwDigIO;
+
+		UINT	nSensMask = 1;
+
+		TCHAR	szFrame[800];
+
+		for (int j=0; j<G4_MAX_SENSORS_PER_HUB; j++)
 		{
-			pHubFrame = (LPG4_HUBDATA)(&pBuf[i]);
-
-			i += sizeof(G4_HUBDATA);
-
-			UINT	nHubID = pHubFrame->nHubID;
-			UINT	nFrameNum =  pHubFrame->nFrameCount;
-			UINT	nSensorMap = pHubFrame->dwSensorMap;
-			UINT	nDigIO = pHubFrame->dwDigIO;
-
-			UINT	nSensMask = 1;
-
-			TCHAR	szFrame[800];
-
-			for (int j=0; j<G4_MAX_SENSORS_PER_HUB; j++)
+			if (((nSensMask << j) & nSensorMap) != 0)
 			{
-				if (((nSensMask << j) & nSensorMap) != 0)
-				{
-					G4_SENSORDATA * pSD = &(pHubFrame->sd[j]);
-					if (g_ePNOOriUnits == E_PDI_ORI_QUATERNION)
-					{
-						_stprintf_s( szFrame, _countof(szFrame), _T("%3d %3d|  %05d|  0x%04x|  % 7.3f % 7.3f % 7.3f| % 8.4f % 8.4f % 8.4f % 8.4f\r\n"),
-								pHubFrame->nHubID, pSD->nSnsID,
-								pHubFrame->nFrameCount, pHubFrame->dwDigIO,
-								pSD->pos[0], pSD->pos[1], pSD->pos[2],
-								pSD->ori[0], pSD->ori[1], pSD->ori[2], pSD->ori[3] );
-					}
-					else
-					{
+				G4_SENSORDATA * pSD = &(pHubFrame->sd[j]);
+					
+				if ( update_mutex.try_lock() ) {
+					if ( PRINT_RECORDS ) {
 						_stprintf_s( szFrame, _countof(szFrame), _T("%3d %3d|  %05d|  0x%04x|  % 7.3f % 7.3f % 7.3f| % 8.3f % 8.3f % 8.3f\r\n"),
 								pHubFrame->nHubID, pSD->nSnsID,
 								pHubFrame->nFrameCount, pHubFrame->dwDigIO,
 								pSD->pos[0], pSD->pos[1], pSD->pos[2],
 								pSD->ori[0], pSD->ori[1], pSD->ori[2] );
+						AddMsg( tstring(szFrame) );
 					}
-					AddMsg( tstring(szFrame) );
+
+					sensor_p_o_records[pSD->nSnsID].frame_number = pHubFrame->nFrameCount;
+					sensor_p_o_records[pSD->nSnsID].pos[0] = pSD->pos[0];
+					sensor_p_o_records[pSD->nSnsID].pos[1] = pSD->pos[1];
+					sensor_p_o_records[pSD->nSnsID].pos[2] = pSD->pos[2];
+					sensor_p_o_records[pSD->nSnsID].ori[0] = pSD->ori[0];
+					sensor_p_o_records[pSD->nSnsID].ori[1] = pSD->ori[1];
+					sensor_p_o_records[pSD->nSnsID].ori[2] = pSD->ori[2];
+					update_mutex.unlock();
 				}
 			}
-
-		} // end while dwsize
-	}
+		}
+	} // end while dwsize
 }
