@@ -1,5 +1,3 @@
-// FTconsole.cpp : Defines the entry point for the console application.
-//
 
 #pragma once
 
@@ -83,32 +81,24 @@ TCHAR	g_G4CFilePath[_MAX_PATH+1];
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-int _tmain(int argc, TCHAR* argv[])
+int main()
 {
 
-	int connection_tries = 0;
-	bool failed;
-	do {
-		failed = false;
-		Initialize();
-		if (!failed &&  !Connect() ) {
-			std::cerr << "Error connecting to g4 tracker" << endl;
-			failed = true;
-		}
-		else if (!failed &&  !SetupDevice()) {
-			std::cerr << "Error setting up g4 tracker" << endl;
-			failed = true;
-		}
-		else if (!failed &&  !StartCont() ) {
-			std::cerr << "Error initiating continous polling of g4 tracker" << endl;
-			failed = true;
-		}
-		if ( failed ) {
-			std::cerr << "... waiting 5 seconds to retry..." << endl;
-			Sleep(5000);  
-		}
-	} while ( connection_tries < 20 && failed );
-
+	Initialize();
+	if (!Connect() ) {
+		std::cerr << "Error connecting to g4 tracker" << endl;
+		return CONNECT_FAILURE;
+	}
+	else if (!SetupDevice()) {
+		std::cerr << "Error setting up g4 tracker" << endl;
+		return SETUP_FAILURE;
+	}
+	else if (!StartCont() ) {
+		std::cerr << "Error initiating continous polling of g4 tracker" << endl;
+		return START_POLLING_FAILURE;
+	}
+	
+	
 	DisplayCont();
 	StopCont();
 	Disconnect();
@@ -127,19 +117,6 @@ void Initialize(  )
 }
 
 
-VOID SetOriUnits( ePDIoriUnits eO )
-{
-	g_pdiDev.SetPNOOriUnits( eO );
-	AddResultMsg(_T("SetPNOOriUnits") );
-
-	g_ePNOOriUnits = eO;
-}
-
-VOID SetPosUnits( ePDIposUnits eP )
-{
-	g_pdiDev.SetPNOPosUnits( eP );
-	AddResultMsg(_T("SetPNOPosUnits") );
-}
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -225,57 +202,6 @@ VOID AddResultMsg( LPCTSTR szCmd )
 	//msg.Format("%s result: %s\r\n", szCmd, m_pdiDev.GetLastResultStr() );
 	msg = tstring(szCmd) + _T(" result: ") + tstring( g_pdiDev.GetLastResultStr() ) + _T("\r\n");
 	AddMsg( msg );
-}
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-VOID ShowMenu( VOID )
-{
-
-	tcout << _T("\n\nPlease enter select a data command option: \n\n");
-	tcout << _T("C or c:  Continuous Motion Data Display\n");
-	tcout << _T("P or p:  Single Motion Data Frame Display\n");
-	tcout << _T("H or h:  Update Hub/Station Map\n");
-	tcout << _T("O or o:  Options Menu\n");
-	tcout << endl;
-	tcout << _T("ESC:     Quit\n");
-}
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-eMenuChoice Prompt( VOID )
-{
-	eMenuChoice eRet = CHOICE_NONE;
-	INT			ch;
-
-	do
-	{
-		tcout << _T("\nCc/Pp/Hh/Oo/ESC>> ");
-		ch = _getche();
-		ch = toupper( ch );
-
-		switch (ch)
-		{
-		case 'C':
-			eRet = CHOICE_CONT;
-			break;
-		case 'P':
-			eRet = CHOICE_SINGLE;
-			break;
-		case 'H':
-			eRet = CHOICE_HUBMAP;
-			break;
-		case 'O':
-			eRet = CHOICE_OPTIONS;
-			break;
-		case ESC: // ESC
-			eRet = CHOICE_QUIT;
-			break;
-		default:
-			break;
-		}
-	} while (eRet == CHOICE_NONE);
-
-	return eRet;
 }
 
 
@@ -380,32 +306,6 @@ VOID DisplayCont( VOID )
 }
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
-VOID DisplaySingle( VOID )
-{
-	PBYTE pBuf;
-	DWORD dwSize;
-
-	cout << endl;
-
-	if (g_dwStationMap==0)
-	{
-		UpdateStationMap();
-	}
-
-	if (!(g_pdiDev.ReadSinglePnoBufG4(pBuf, dwSize)))
-	{
-		AddResultMsg(_T("ReadSinglePno") );
-	}
-	else if ((pBuf == 0) || (dwSize == 0))
-	{
-	}
-	else 
-	{
-		ParseG4NativeFrame( pBuf, dwSize );
-	}
-}
-/////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////
 //typedef struct {				// per sensor P&O data
 //	UINT32 nSnsID;				//4
 //	float pos[3];				//12
@@ -472,29 +372,3 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 		} // end while dwsize
 	}
 }
-
-VOID DisplayFrame( PBYTE pBuf, DWORD dwSize )
-{
-	TCHAR	szFrame[200];
-	DWORD	i = 0;
-
-    while ( i<dwSize)
-    {
-		FT_BINHDR *pHdr = (FT_BINHDR*)(&pBuf[i]);
-	    CHAR cSensor = pHdr->station;
-		SHORT shSize = 6*(sizeof(FLOAT));
-
-        // skip rest of header
-        i += sizeof(FT_BINHDR);
-
-		PFLOAT pPno = (PFLOAT)(&pBuf[i]);
-
-		_stprintf_s( szFrame, _countof(szFrame), _T("%2c   %+011.6f %+011.6f %+011.6f   %+011.6f %+011.6f %+011.6f\r\n"), 
-			     cSensor, pPno[0], pPno[1], pPno[2], pPno[3], pPno[4], pPno[5] );
-
-		AddMsg( tstring( szFrame ) );
-
-		i += shSize;
-	}
-}
-
