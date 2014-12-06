@@ -15,7 +15,7 @@
 #include <iostream>
 #include "PDI.h"
 
-#include "tracker_props.h"
+#include "trackr.h"
 
 using namespace std;
 typedef basic_string<TCHAR> tstring;
@@ -53,7 +53,7 @@ VOID		AddMsg				( tstring & );
 VOID		AddResultMsg		( LPCTSTR );
 BOOL		StartCont			( VOID );
 BOOL		StopCont			( VOID );	
-VOID		DisplayCont			( VOID );
+void poll();
 VOID		ParseG4NativeFrame	( PBYTE, DWORD );
 
 #define BUFFER_SIZE 0x1FA400   // 30 seconds of xyzaer+fc 8 sensors at 240 hz 
@@ -63,16 +63,11 @@ TCHAR	g_G4CFilePath[_MAX_PATH+1];
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-struct porec {
-	int frame_number;
-	float pos[3];
-	float ori[3];
-} ;
 
 mutex update_mutex;
-struct porec sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
+struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
-#define PRINT_RECORDS false
+
 
 
 
@@ -97,8 +92,8 @@ int main()
 		return START_POLLING_FAILURE;
 	}
 	
-	cout << "g4 server started, connect on named pipe 'trackr_g4'" << endl;
-	DisplayCont();
+	cout << "g4 server started, connect socket on on named pipe " << G4_SOCKET_PORT << endl;
+	poll();
 	StopCont();
 	Disconnect();
 	cout << "g4 server shutdown" << endl;
@@ -253,7 +248,7 @@ BOOL StopCont( VOID )
 }
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
-VOID DisplayCont( VOID )
+void poll()
 {
 	bool exit = false;
 
