@@ -25,6 +25,12 @@ struct po_sample {
 	float ori[3];
 } ;
 
+void sample_to_string(po_sample sample, char buffer[], int bufferSize) {
+	sprintf_s(buffer,bufferSize, "%i|%f|%f|%f|%f|%f|%f",
+		sample.frame_number, sample.pos[0], sample.pos[1], sample.pos[2], 
+		sample.ori[0], sample.ori[1], sample.ori[2]);
+}
+
 int __cdecl main(void) 
 {
     WSADATA wsaData;
@@ -39,6 +45,14 @@ int __cdecl main(void)
     struct addrinfo hints;
 
     int iSendResult;
+
+	sample.frame_number = 1;
+	sample.pos[0] = 1;
+	sample.pos[1] = 2;
+	sample.pos[2] = 3;
+	sample.ori[0] = 4;
+	sample.ori[1] = 5;
+	sample.ori[2] = 9;
    
     
     // Initialize Winsock
@@ -101,14 +115,16 @@ int __cdecl main(void)
 		}
 
 		bool active = true;
-
+		char buffer[100];
 		// Receive until the peer shuts down the connection
 		do {
 
 			iResult = recv(ClientSocket, (char *)&request, sizeof(request), 0);
 			if (iResult > 0) {
+				
+				sample_to_string(sample, buffer, 100);
 				//printf("Bytes received: %d\n", iResult);
-				iSendResult = send( ClientSocket, (char *)&sample, sizeof(sample), 0 );
+				iSendResult = send( ClientSocket, buffer, strlen(buffer), 0 );
 				if (iSendResult == SOCKET_ERROR) {
 					printf("send failed with error: %d\n", WSAGetLastError());
 					closesocket(ClientSocket);

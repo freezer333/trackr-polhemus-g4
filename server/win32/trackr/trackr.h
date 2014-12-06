@@ -19,5 +19,5 @@ struct po_req {
 struct po_sample {
 	int frame_number;
 	float pos[3];
-	float ori[3];
+	float ori[4];
 } ;

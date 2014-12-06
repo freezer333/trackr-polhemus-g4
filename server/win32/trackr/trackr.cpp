@@ -81,11 +81,17 @@ mutex update_mutex;
 struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
 
+void sample_to_string(po_sample sample, char buffer[], int bufferSize) {
+	sprintf_s(buffer,bufferSize, "%i|%f|%f|%f|%f|%f|%f|%f",
+		sample.frame_number, sample.pos[0], sample.pos[1], sample.pos[2], 
+		sample.ori[0], sample.ori[1], sample.ori[2], sample.ori[3]);
+}
 
 void run_server() {
 	struct po_sample sample;
 	struct po_req request;
 	SOCKET ClientSocket = INVALID_SOCKET;
+	char buffer[100];
 	int iSendResult ;
 	while ( 1 ) {
 		cout << "Listening on " << G4_SOCKET_PORT << endl;
@@ -99,6 +105,7 @@ void run_server() {
 		}
 
 		while (1) {
+
     		ClientSocket = accept(ListenSocket, NULL, NULL);
 			if (ClientSocket == INVALID_SOCKET) {
 				printf("accept failed with error: %d\n", WSAGetLastError());
@@ -117,7 +124,9 @@ void run_server() {
 					update_mutex.lock();
 					memcpy(&sample, &(sensor_p_o_records[0]), sizeof(po_sample));
 					update_mutex.unlock();
-					iSendResult = send( ClientSocket, (char *)&(sample), sizeof(po_sample), 0 );
+
+					sample_to_string(sample, buffer, 100);
+					iSendResult = send( ClientSocket, buffer, strnlen(buffer, 100), 0 );
 					if (iSendResult == SOCKET_ERROR) {
 						printf("send failed with error: %d\n", WSAGetLastError());
 						closesocket(ClientSocket);
@@ -183,7 +192,7 @@ void Initialize(  )
 	_tcsncpy_s(g_G4CFilePath, _countof(g_G4CFilePath), G4C_PATH, _tcslen(G4C_PATH));
 	g_bCnxReady = FALSE;
 	g_dwStationMap = 0;
-	g_ePNOOriUnits = E_PDI_ORI_EULER_DEGREE;
+	g_ePNOOriUnits = E_PDI_ORI_QUATERNION;
 }
 
 
@@ -239,6 +248,8 @@ BOOL SetupDevice( VOID )
 	AddResultMsg(_T("StartPipeExport") );
 
 	UpdateStationMap();
+
+	g_pdiDev.SetPNOOriUnits( g_ePNOOriUnits );
 
 	return TRUE;
 }
@@ -427,6 +438,7 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 					sensor_p_o_records[pSD->nSnsID].ori[0] = pSD->ori[0];
 					sensor_p_o_records[pSD->nSnsID].ori[1] = pSD->ori[1];
 					sensor_p_o_records[pSD->nSnsID].ori[2] = pSD->ori[2];
+					sensor_p_o_records[pSD->nSnsID].ori[3] = pSD->ori[3];
 					update_mutex.unlock();
 				}
 			}

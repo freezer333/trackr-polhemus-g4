@@ -47,12 +47,14 @@
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 
+
 		<script src="js/wip/TypedGeometry.js"></script>
 		<script src="js/wip/IndexedTypedGeometry.js"></script>
 		<script src="js/wip/PlaneTypedGeometry.js"></script>
 
 		<script>
-
+			var g4 = require('g4');
+			console.log(g4);
 			if ( ! Detector.webgl ) {
 
 				Detector.addGetWebGLMessage();
@@ -76,7 +78,7 @@
 			animate();
 
 			function init() {
-
+				
 				container = document.getElementById( 'container' );
 
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
@@ -198,6 +200,24 @@
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
 
+
+				
+				g4.initialize(function(err, po) {
+
+					camera.rotation.setFromQuaternion(new THREE.Quaternion(
+						po.ori.y, -po.ori.z, po.ori.x, po.ori.w), 'XYZ' );
+					
+					
+					//console.log(JSON.stringify(po));
+					/*camera.position.x = po.pos.x;
+					camera.position.y = po.pos.y;
+					camera.position.z = -po.pos.z;*/
+					
+					/*camera.rotation.x = po.ori.x;
+					camera.rotation.y = po.ori.y;
+					camera.rotation.z = po.ori.z;*/
+				} );
+
 				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
@@ -247,7 +267,7 @@
 			//
 
 			function animate() {
-
+				g4.poll(null);
 				requestAnimationFrame( animate );
 
 				render();
@@ -256,9 +276,8 @@
 			}
 
 			function render() {
-				var current = camera.rotation.y * 180 / Math.PI;
-				current += 1;
-				camera.rotation.y = current* Math.PI / 180
+				
+				
 				renderer.render( scene, camera );
 			}
 
