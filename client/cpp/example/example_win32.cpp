@@ -111,9 +111,7 @@ int __cdecl main(int argc, char **argv)
 		do {
 			iResult = recv(ConnectSocket, (char *)&sample, sizeof(po_sample), 0);
 			if ( iResult > 0 ) {
-				if ( sends % 1000 == 0 ) {
-					printf("%d\n", sends);
-				}
+				printf("%d -> %f, %f, %f\n", sample.frame_number, sample.pos[0], sample.pos[1], sample.pos[2]);
 			}
 			else if ( iResult == 0 )
 				printf("All data recieved\n");

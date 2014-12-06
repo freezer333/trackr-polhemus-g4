@@ -1,5 +1,17 @@
 
 #pragma once
+#undef UNICODE
+
+#define WIN32_LEAN_AND_MEAN
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+// Need to link with Ws2_32.lib
+#pragma comment (lib, "Ws2_32.lib")
 
 #include <SDKDDKVer.h>
 #define _CRT_SECURE_NO_WARNINGS
@@ -12,9 +24,10 @@
 
 #include <string>
 #include <mutex>
+#include <thread>
 #include <iostream>
 #include "PDI.h"
-
+#include "server.h"
 #include "trackr.h"
 
 using namespace std;
@@ -69,6 +82,68 @@ struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
 
 
+void run_server() {
+	struct po_sample sample;
+	struct po_req request;
+	SOCKET ClientSocket = INVALID_SOCKET;
+	int iSendResult ;
+	while ( 1 ) {
+		cout << "Listening on " << G4_SOCKET_PORT << endl;
+		SOCKET ListenSocket = build_listen_socket();
+		int iResult = listen(ListenSocket, SOMAXCONN);
+		if (iResult == SOCKET_ERROR) {
+			printf("listen failed with error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+		   return;
+		}
+
+		while (1) {
+    		ClientSocket = accept(ListenSocket, NULL, NULL);
+			if (ClientSocket == INVALID_SOCKET) {
+				printf("accept failed with error: %d\n", WSAGetLastError());
+				closesocket(ListenSocket);
+				WSACleanup();
+				return;
+			}
+
+			bool active = true;
+
+			// Receive until the peer shuts down the connection
+			do {
+
+				iResult = recv(ClientSocket, (char *)&request, sizeof(request), 0);
+				if (iResult > 0) {
+					update_mutex.lock();
+					memcpy(&sample, &(sensor_p_o_records[0]), sizeof(po_sample));
+					update_mutex.unlock();
+					iSendResult = send( ClientSocket, (char *)&(sample), sizeof(po_sample), 0 );
+					if (iSendResult == SOCKET_ERROR) {
+						printf("send failed with error: %d\n", WSAGetLastError());
+						closesocket(ClientSocket);
+						active = false;
+					}
+				}
+				else  {
+					printf("recv failed with error: %d\n", WSAGetLastError());
+					closesocket(ClientSocket);
+					active = false;
+				}
+
+			} while (active);
+
+		
+			 // cleanup
+			closesocket(ClientSocket);
+		
+			printf("client socket shutdown\n");
+		}
+
+		// No longer need server socket
+		closesocket(ListenSocket);
+		WSACleanup();
+	}
+}
 
 
 
@@ -77,7 +152,6 @@ struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 /////////////////////////////////////////////////////////////////////////////
 int main()
 {
-
 	Initialize();
 	if (!Connect() ) {
 		std::cerr << "Error connecting to g4 tracker" << endl;
@@ -92,7 +166,8 @@ int main()
 		return START_POLLING_FAILURE;
 	}
 	
-	cout << "g4 server started, connect socket on on named pipe " << G4_SOCKET_PORT << endl;
+	cout << "g4 server started, connect socket at port " << G4_SOCKET_PORT << endl;
+	std::thread t1(run_server);
 	poll();
 	StopCont();
 	Disconnect();

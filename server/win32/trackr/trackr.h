@@ -8,7 +8,7 @@
 
 #define PRINT_RECORDS false
 
-#define G4_SOCKET_PORT 1986
+#define G4_SOCKET_PORT "1986"
 
 struct po_req {
 	bool sensor_0;
