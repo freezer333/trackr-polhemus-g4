@@ -41,8 +41,8 @@
 		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
 		
 		<script src="../../lib/three.min.js"></script>
-
 		
+
 		<script src="js/ImprovedNoise.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -52,9 +52,9 @@
 		<script src="js/wip/IndexedTypedGeometry.js"></script>
 		<script src="js/wip/PlaneTypedGeometry.js"></script>
 
+		<script src="js/controls/TrackballControls.js"></script>
 		<script>
-			var g4 = require('g4');
-			console.log(g4);
+			//var g4 = require('g4');
 			if ( ! Detector.webgl ) {
 
 				Detector.addGetWebGLMessage();
@@ -80,13 +80,31 @@
 			function init() {
 				
 				container = document.getElementById( 'container' );
-
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
-				camera.position.y = getY( worldHalfWidth, worldHalfDepth ) * 100 + 100;
-
 				
-				scene = new THREE.Scene();
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
+				camera.position.x = 0;
+				camera.position.y = 200;
+				camera.position.z = 500;
 
+				controls = new THREE.TrackballControls( camera );
+
+				controls.rotateSpeed = 1.0;
+				controls.zoomSpeed = 1.2;
+				controls.panSpeed = 0.8;
+
+				controls.noZoom = false;
+				controls.noPan = false;
+
+				controls.staticMoving = true;
+				controls.dynamicDampingFactor = 0.3;
+
+				controls.keys = [ 65, 83, 68 ];
+
+				controls.addEventListener( 'change', render );
+
+				controls.target = new THREE.Vector3(0, 0, 0);
+
+				scene = new THREE.Scene();
 				// sides
 
 				var matrix = new THREE.Matrix4();
@@ -200,9 +218,11 @@
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
 
-
 				
-				g4.initialize(function(err, po) {
+				
+				
+
+				/*g4.initialize(function(err, po) {
 
 					camera.rotation.setFromQuaternion(new THREE.Quaternion(
 						po.ori.y, -po.ori.z, po.ori.x, po.ori.w), 'XYZ' );
@@ -216,7 +236,7 @@
 					/*camera.rotation.x = po.ori.x;
 					camera.rotation.y = po.ori.y;
 					camera.rotation.z = po.ori.z;*/
-				} );
+				//} );
 
 				//
 
@@ -267,9 +287,9 @@
 			//
 
 			function animate() {
-				g4.poll(null);
+				//g4.poll(null);
 				requestAnimationFrame( animate );
-
+				controls.update();
 				render();
 				stats.update();
 
