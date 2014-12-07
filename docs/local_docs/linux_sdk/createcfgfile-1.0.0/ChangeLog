@@ -1,0 +1,12 @@
+commit 038c2ccf3da8a62225e6ad2a9f4ed8b1c9cde886
+Author: James Farr <jimfarr@polhemus.com>
+Date:   Wed Mar 6 10:43:01 2013 -0500
+
+    Updated README
+    Version 1.0.0
+
+commit 624b0393401216a518cb8bb5964bbb0fe40a5e6e
+Author: James Farr <jimfarr@polhemus.com>
+Date:   Wed Feb 27 12:13:34 2013 -0500
+
+    Initial version for package
