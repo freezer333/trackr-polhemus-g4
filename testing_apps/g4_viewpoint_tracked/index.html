@@ -39,9 +39,9 @@
 	<body>
 
 		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
-		
+
 		<script src="../../lib/three.min.js"></script>
-		<script src="js/loaders/OBJLoader.js"></script>
+
 
 		<script src="js/ImprovedNoise.js"></script>
 		<script src="js/Detector.js"></script>
@@ -54,7 +54,7 @@
 
 		<script src="js/controls/TrackballControls.js"></script>
 		<script>
-			//var g4 = require('g4');
+			var g4 = require('g4');
 			if ( ! Detector.webgl ) {
 
 				Detector.addGetWebGLMessage();
@@ -67,6 +67,7 @@
 			var camera, controls, scene, renderer;
 
 			var mesh;
+			var car;
 
 			var worldWidth = 128, worldDepth = 128,
 			worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2,
@@ -78,9 +79,9 @@
 			animate();
 
 			function init() {
-				
+
 				container = document.getElementById( 'container' );
-				
+
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
 				camera.position.x = 0;
 				camera.position.y = 1000;
@@ -219,23 +220,6 @@
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
 
-				/*
-				var loader = new THREE.JSONLoader();
-			    loader.load( "models/treehouse_logo.js", function(geometry){
-			      var material = new THREE.MeshLambertMaterial({color: "0x55B663"});
-			      mesh = new THREE.Mesh(geometry, material);
-
-			      mesh.position.x = 0;
-				  mesh.position.y = 100;
-				  mesh.position.z = 0;
-
-				  mesh.scale.x = 10;
-				  mesh.scale.y = 10;
-				  mesh.scale.z = 10;
-
-			      scene.add(mesh);
-			    });
-				*/
 				var loader = new THREE.JSONLoader(); // init the loader util
 
 				// init loading
@@ -249,36 +233,29 @@
 				  });
 				  
 				  // create a mesh with models geometry and material
-				  var mesh = new THREE.Mesh(
+				  car = new THREE.Mesh(
 				    geometry,
 				    material
 				  );
 				  
 				  //mesh.rotation.y = -Math.PI/5;
-				  mesh.position.y = 10;
-				  scene.add(mesh);
+				  car.position.y = 10;
+				  car.position.x = 0;
+				  car.position.z = 0;
+				  scene.add(car);
 
 				});
 
-				
-				
+				g4.initialize(function(err, po) {
 
-				/*g4.initialize(function(err, po) {
+					car.rotation.setFromQuaternion(new THREE.Quaternion(
+						po.ori.x, po.ori.y, po.ori.z, po.ori.w));
 
-					camera.rotation.setFromQuaternion(new THREE.Quaternion(
-						po.ori.y, -po.ori.z, po.ori.x, po.ori.w), 'XYZ' );
+
 					
 					
-					//console.log(JSON.stringify(po));
-					/*camera.position.x = po.pos.x;
-					camera.position.y = po.pos.y;
-					camera.position.z = -po.pos.z;*/
-					
-					/*camera.rotation.x = po.ori.x;
-					camera.rotation.y = po.ori.y;
-					camera.rotation.z = po.ori.z;*/
-				//} );
-
+				} );
+			
 				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
@@ -291,7 +268,7 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
-			
+
 			}
 
 			function generateHeight( width, height ) {
@@ -328,7 +305,7 @@
 			//
 
 			function animate() {
-				//g4.poll(null);
+				g4.poll(null);
 				requestAnimationFrame( animate );
 				controls.update();
 				render();
@@ -337,8 +314,8 @@
 			}
 
 			function render() {
-				
-				
+
+
 				renderer.render( scene, camera );
 			}
 

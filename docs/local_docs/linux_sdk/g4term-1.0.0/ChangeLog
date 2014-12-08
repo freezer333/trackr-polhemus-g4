@@ -1,0 +1,31 @@
+commit 7143c760fca5c65c80d2202b9933cb6881348450
+Author: James Farr <jimfarr@polhemus.com>
+Date:   Tue Mar 5 14:00:42 2013 -0500
+
+    Updated source to use GTK+-3.0. Also updated README. Since never released left as version 1.0.0
+
+commit 13631a052454550bdbec1b181d8b8a24791dc313
+Author: James C. Farr <jimfarr@polhemus.com>
+Date:   Thu Jan 5 12:23:13 2012 -0500
+
+    Updated version to 1.0.0
+    Pulling version info from config.h
+    Added error messages in configure.ac if header files not found
+
+commit 22aa2e0f8f6999e64ae768a8fb727bd49d1b20e1
+Author: James C. Farr <jimfarr@polhemus.com>
+Date:   Tue Jan 3 12:24:14 2012 -0500
+
+    autoconf cleanup
+
+commit aff045dc68d1b125882f4a534de5614340600d53
+Author: James C. Farr <jimfarr@polhemus.com>
+Date:   Tue Dec 20 05:35:08 2011 -0500
+
+    Added autoconf files, modified dialogs to use GTK+-3.0
+
+commit 2c9991657ecd1092e0f8c08f52ec75151fc0c0c8
+Author: James C. Farr <jimfarr@polhemus.com>
+Date:   Tue Dec 20 02:55:47 2011 -0500
+
+    Initial Commit -- before autoconf files added

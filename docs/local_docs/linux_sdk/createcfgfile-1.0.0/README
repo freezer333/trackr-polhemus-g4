@@ -1,0 +1,6 @@
+This application requires GTK+-3.0 and G4Track development libraries to build and run.
+
+Use the usual "./configure && make" commands to build on your system.  Then run "sudo make install".
+This will install an executable titled CreateSrcCfg on your system.
+
+Send issues/suggestions to help@polhemus.com
