@@ -39,9 +39,9 @@
 	<body>
 
 		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
-		
+
 		<script src="../../lib/three.min.js"></script>
-		
+
 
 		<script src="js/ImprovedNoise.js"></script>
 		<script src="js/Detector.js"></script>
@@ -78,9 +78,9 @@
 			animate();
 
 			function init() {
-				
+
 				container = document.getElementById( 'container' );
-				
+
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
 				camera.position.x = 0;
 				camera.position.y = 200;
@@ -218,21 +218,31 @@
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
 
-				
-				
-				
+
+
+				var loader = new THREE.JSONLoader();
+        loader.load( "airplane.scene/us-c-130-hercules-airplane.json", modelToScene );
+
+				function modelToScene( geometry, materials ) {
+            var material = new THREE.MeshFaceMaterial( materials );
+            obj = new THREE.Mesh( geometry, material );
+            obj.scale.set(1,1,1);
+            scene.add( obj );
+        }
+
+
 
 				/*g4.initialize(function(err, po) {
 
 					camera.rotation.setFromQuaternion(new THREE.Quaternion(
 						po.ori.y, -po.ori.z, po.ori.x, po.ori.w), 'XYZ' );
-					
-					
+
+
 					//console.log(JSON.stringify(po));
 					/*camera.position.x = po.pos.x;
 					camera.position.y = po.pos.y;
 					camera.position.z = -po.pos.z;*/
-					
+
 					/*camera.rotation.x = po.ori.x;
 					camera.rotation.y = po.ori.y;
 					camera.rotation.z = po.ori.z;*/
@@ -250,7 +260,7 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
-			
+
 			}
 
 			function generateHeight( width, height ) {
@@ -296,8 +306,8 @@
 			}
 
 			function render() {
-				
-				
+
+
 				renderer.render( scene, camera );
 			}
 
