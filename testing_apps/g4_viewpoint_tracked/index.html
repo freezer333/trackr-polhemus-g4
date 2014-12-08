@@ -41,7 +41,7 @@
 		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
 		
 		<script src="../../lib/three.min.js"></script>
-		
+		<script src="js/loaders/OBJLoader.js"></script>
 
 		<script src="js/ImprovedNoise.js"></script>
 		<script src="js/Detector.js"></script>
@@ -83,14 +83,14 @@
 				
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
 				camera.position.x = 0;
-				camera.position.y = 200;
-				camera.position.z = 500;
+				camera.position.y = 1000;
+				camera.position.z = 100;
 
 				controls = new THREE.TrackballControls( camera );
 
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
+				controls.rotateSpeed = .6;
+				controls.zoomSpeed = .6;
+				controls.panSpeed = 0.6;
 
 				controls.noZoom = false;
 				controls.noPan = false;
@@ -103,6 +103,7 @@
 				controls.addEventListener( 'change', render );
 
 				controls.target = new THREE.Vector3(0, 0, 0);
+
 
 				scene = new THREE.Scene();
 				// sides
@@ -218,7 +219,47 @@
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
 
-				
+				/*
+				var loader = new THREE.JSONLoader();
+			    loader.load( "models/treehouse_logo.js", function(geometry){
+			      var material = new THREE.MeshLambertMaterial({color: "0x55B663"});
+			      mesh = new THREE.Mesh(geometry, material);
+
+			      mesh.position.x = 0;
+				  mesh.position.y = 100;
+				  mesh.position.z = 0;
+
+				  mesh.scale.x = 10;
+				  mesh.scale.y = 10;
+				  mesh.scale.z = 10;
+
+			      scene.add(mesh);
+			    });
+				*/
+				var loader = new THREE.JSONLoader(); // init the loader util
+
+				// init loading
+				loader.load('models/car.js', function (geometry) {
+				  // create a new material
+				  var material = new THREE.MeshLambertMaterial({
+				    map: THREE.ImageUtils.loadTexture('models/textures/gtare.jpg'),  // specify and load the texture
+				    colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+				  });
+				  
+				  // create a mesh with models geometry and material
+				  var mesh = new THREE.Mesh(
+				    geometry,
+				    material
+				  );
+				  
+				  //mesh.rotation.y = -Math.PI/5;
+				  mesh.position.y = 10;
+				  scene.add(mesh);
+
+				});
+
 				
 				
 
