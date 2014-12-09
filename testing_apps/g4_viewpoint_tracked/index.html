@@ -96,18 +96,28 @@
 				scene = new THREE.Scene();
 
 				g4_object = new THREE.Object3D();
-				tracker_coord_frame = new THREE.Object3D();
-				scene.add(tracker_coord_frame);
-				tracker_coord_frame.add(g4_object);
+				tracker_to_user = new THREE.Object3D();
+				scene.add(tracker_to_user);
+				tracker_to_user.add(g4_object);
+
 				
+
+				/*
 				var axis = new THREE.Vector3(1,0,0);
 				var rad = -90 * Math.PI / 180;
-				tracker_coord_frame.rotateOnAxis(axis,rad);
-
+				tracker_to_user.rotateOnAxis(axis,rad);
+				
 				axis = new THREE.Vector3(0,0,1);
 				rad = 90 * Math.PI / 180;
-				tracker_coord_frame.rotateOnAxis(axis,rad);
+				tracker_to_user.rotateOnAxis(axis,rad);
 
+				axis = new THREE.Vector3(1,0,0);
+				rad = -90 * Math.PI / 180;
+				tracker_to_user.rotateOnAxis(axis,rad);
+				*/
+				
+				var taxes = buildAxes( 1000 );
+				g4_object.add( taxes );
 
 				// sides
 
@@ -245,10 +255,12 @@
 				  car.position.x = 0;
 				  car.position.z = 0;
 
-				  axis = new THREE.Vector3(0,0,1);
-				  rad = 90 * Math.PI / 180;
+				  
+				 /* axis = new THREE.Vector3(0,1,0);
+				  rad = 180 * Math.PI / 180;
 				  car.rotateOnAxis(axis,rad);
-
+				*/
+				
 
 
 
@@ -259,16 +271,30 @@
 
 
 				g4.initialize(function(err, po) {
-					
+						
+					var tq = new THREE.Quaternion(po.ori.x, po.ori.y, po.ori.z, po.ori.w)
+					/*var a = new THREE.Euler( 0, 0, 0, 'XYZ' );
+					a.setFromQuaternion(tq);
+					//var b = new THREE.Euler( a.y, -a.z, a.x, 'XYZ' );
+					var b = new THREE.Euler( a.x, a.y, a.z, 'XYZ' );
+					var newq = new THREE.Quaternion();
+					newq.setFromEuler(b);
+					console.log(tq.x + ", " + tq.y + ", " + tq.z + ", " + tq.z);
+					//console.log(newq.x + ", " + newq.y + ", " + newq.z + ", " + newq.z);
+					console.log("---------------------------------------------------");
+					*/
+					g4_object.rotation.setFromQuaternion(tq);
 
 					g4_object.position.x = po.pos.x * 5;
 					g4_object.position.y = po.pos.y * 5;
 					g4_object.position.z = po.pos.z * 5;
 
-					g4_object.rotation.setFromQuaternion(new THREE.Quaternion(
-						po.ori.x, po.ori.y, po.ori.z, po.ori.w));
+					//console.log(po.ori);
 
 					
+
+					/*rotate by 180 degrees around z...*/
+
 				} );
 			
 				

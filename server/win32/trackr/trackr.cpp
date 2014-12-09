@@ -249,6 +249,7 @@ BOOL SetupDevice( VOID )
 
 	UpdateStationMap();
 
+	printf("Setting to quaternion orientation reporting\n");
 	g_pdiDev.SetPNOOriUnits( g_ePNOOriUnits );
 
 	return TRUE;
