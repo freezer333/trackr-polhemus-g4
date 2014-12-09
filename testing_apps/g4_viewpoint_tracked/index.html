@@ -101,8 +101,13 @@
 				tracker_coord_frame.add(g4_object);
 				
 				var axis = new THREE.Vector3(1,0,0);
-				var rad = 90 * Math.PI / 180;
-				//tracker_coord_frame.rotateOnAxis(axis,rad);
+				var rad = -90 * Math.PI / 180;
+				tracker_coord_frame.rotateOnAxis(axis,rad);
+
+				axis = new THREE.Vector3(0,0,1);
+				rad = 90 * Math.PI / 180;
+				tracker_coord_frame.rotateOnAxis(axis,rad);
+
 
 				// sides
 
@@ -239,6 +244,14 @@
 				  car.position.y = 0;
 				  car.position.x = 0;
 				  car.position.z = 0;
+
+				  axis = new THREE.Vector3(0,0,1);
+				  rad = 90 * Math.PI / 180;
+				  car.rotateOnAxis(axis,rad);
+
+
+
+
 				  g4_object.add(car);
 
 				});
@@ -246,8 +259,16 @@
 
 
 				g4.initialize(function(err, po) {
+					
+
+					g4_object.position.x = po.pos.x * 5;
+					g4_object.position.y = po.pos.y * 5;
+					g4_object.position.z = po.pos.z * 5;
+
 					g4_object.rotation.setFromQuaternion(new THREE.Quaternion(
 						po.ori.x, po.ori.y, po.ori.z, po.ori.w));
+
+					
 				} );
 			
 				
