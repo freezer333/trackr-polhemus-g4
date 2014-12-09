@@ -52,6 +52,7 @@
 		<script src="js/wip/IndexedTypedGeometry.js"></script>
 		<script src="js/wip/PlaneTypedGeometry.js"></script>
 
+		<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
 		<script src="js/controls/TrackballControls.js"></script>
 		<script>
 			var g4 = require('g4');
@@ -68,6 +69,9 @@
 
 			var mesh;
 			var car;
+			var g4_object;
+			var tracker_coord_frame;
+
 
 			var worldWidth = 128, worldDepth = 128,
 			worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2,
@@ -81,32 +85,25 @@
 			function init() {
 
 				container = document.getElementById( 'container' );
+				camera = new THREE.PerspectiveCamera( 60, 
+					window.innerWidth / window.innerHeight, 1, 1000 );
+			  	camera.position.z = 500;
 
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-				camera.position.set( 30, 50, 120 );
-				camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
-				
-
-				controls = new THREE.TrackballControls( camera );
-
-				controls.rotateSpeed = .6;
-				controls.zoomSpeed = .6;
-				controls.panSpeed = 0.6;
-
-				controls.noZoom = false;
-				controls.noPan = false;
-
-				controls.staticMoving = true;
-				controls.dynamicDampingFactor = 0.3;
-
-				controls.keys = [ 65, 83, 68 ];
-
-				controls.addEventListener( 'change', render );
-
-				controls.target = new THREE.Vector3(0, 0, 0);
+			  	controls = new THREE.OrbitControls( camera );
+			  	controls.addEventListener( 'change', render );
 
 
 				scene = new THREE.Scene();
+
+				g4_object = new THREE.Object3D();
+				tracker_coord_frame = new THREE.Object3D();
+				scene.add(tracker_coord_frame);
+				tracker_coord_frame.add(g4_object);
+				
+				var axis = new THREE.Vector3(1,0,0);
+				var rad = 90 * Math.PI / 180;
+				//tracker_coord_frame.rotateOnAxis(axis,rad);
+
 				// sides
 
 				var matrix = new THREE.Matrix4();
@@ -242,18 +239,15 @@
 				  car.position.y = 0;
 				  car.position.x = 0;
 				  car.position.z = 0;
-				  scene.add(car);
+				  g4_object.add(car);
 
 				});
 
+
+
 				g4.initialize(function(err, po) {
-
-					car.rotation.setFromQuaternion(new THREE.Quaternion(
+					g4_object.rotation.setFromQuaternion(new THREE.Quaternion(
 						po.ori.x, po.ori.y, po.ori.z, po.ori.w));
-
-
-					
-					
 				} );
 			
 				
