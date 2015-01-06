@@ -427,12 +427,13 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 			{
 				G4_SENSORDATA * pSD = &(pHubFrame->sd[j]);
 					
+				/* Holy shit.  ori[0] is z, ori[1] is y, ori[2] is x.  Nice.  */
 				if ( update_mutex.try_lock() ) {
 					if ( PRINT_RECORDS ) {
 						_stprintf_s( szFrame, _countof(szFrame), _T("|  %05d|  % 7.3f % 7.3f % 7.3f| % 8.3f % 8.3f % 8.3f \r\n"),
 								pHubFrame->nFrameCount,
 								pSD->pos[0], pSD->pos[1], pSD->pos[2],
-								pSD->ori[0], pSD->ori[1], pSD->ori[2]);
+								pSD->ori[2], pSD->ori[1], pSD->ori[0]);
 						AddMsg( tstring(szFrame) );
 					}
 
@@ -440,9 +441,14 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 					sensor_p_o_records[pSD->nSnsID].pos[0] = pSD->pos[0];
 					sensor_p_o_records[pSD->nSnsID].pos[1] = pSD->pos[1];
 					sensor_p_o_records[pSD->nSnsID].pos[2] = pSD->pos[2];
-					sensor_p_o_records[pSD->nSnsID].ori[0] = to_radians(pSD->ori[0]);
+					/* Holy shit.  ori[0] is z, ori[1] is y, ori[2] is x.  
+					   Nice.  
+					   Reversing this so its in the customary x/y/z order for clients connecting.
+					   Nice.
+					*/
+					sensor_p_o_records[pSD->nSnsID].ori[0] = to_radians(pSD->ori[2]);
 					sensor_p_o_records[pSD->nSnsID].ori[1] = to_radians(pSD->ori[1]);
-					sensor_p_o_records[pSD->nSnsID].ori[2] = to_radians(pSD->ori[2]);
+					sensor_p_o_records[pSD->nSnsID].ori[2] = to_radians(pSD->ori[0]);
 					update_mutex.unlock();
 				}
 			}
