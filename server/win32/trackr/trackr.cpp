@@ -444,7 +444,7 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 					/* Holy shit.  ori[0] is z, ori[1] is y, ori[2] is x.  
 					   Nice.  
 					   Reversing this so its in the customary x/y/z order for clients connecting.
-					   Nice.
+					   Where's the tylenol.
 					*/
 					sensor_p_o_records[pSD->nSnsID].ori[0] = to_radians(pSD->ori[2]);
 					sensor_p_o_records[pSD->nSnsID].ori[1] = to_radians(pSD->ori[1]);

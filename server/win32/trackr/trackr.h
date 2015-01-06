@@ -6,7 +6,7 @@
 #define SETUP_FAILURE -2
 #define START_POLLING_FAILURE -3
 
-#define PRINT_RECORDS true
+#define PRINT_RECORDS false
 
 #define G4_SOCKET_PORT "1986"
 
