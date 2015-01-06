@@ -268,36 +268,13 @@
 
 				});
 
-/*var a = new THREE.Euler( 0, 0, 0, 'XYZ' );
-					a.setFromQuaternion(tq);
-					//var b = new THREE.Euler( a.y, -a.z, a.x, 'XYZ' );
-					var b = new THREE.Euler( a.x, a.y, a.z, 'XYZ' );
-					var newq = new THREE.Quaternion();
-					newq.setFromEuler(b);
-					console.log(tq.x + ", " + tq.y + ", " + tq.z + ", " + tq.z);
-					//console.log(newq.x + ", " + newq.y + ", " + newq.z + ", " + newq.z);
-					console.log("---------------------------------------------------");
-					*/
 
 				g4.initialize(function(err, po) {
 					var euler = new THREE.Euler(po.ori.x, po.ori.y, po.ori.z, 'ZYX');
-					console.log(po.ori.x + " " + po.ori.y + " " + po.ori.z);
 					g4_object.quaternion.setFromEuler(euler);
-					/*var tq = new THREE.Quaternion(po.ori.x, po.ori.y, po.ori.z, po.ori.w)
-					
-					g4_object.rotation.setFromQuaternion(tq);*/
-					/*
 					g4_object.position.x = po.pos.x;
 					g4_object.position.y = po.pos.y;
 					g4_object.position.z = po.pos.z;
-					*/
-
-					//console.log(po.ori);
-
-					
-
-					/*rotate by 180 degrees around z...*/
-
 				} );
 			
 				
