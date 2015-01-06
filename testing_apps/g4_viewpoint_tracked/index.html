@@ -41,32 +41,23 @@
 		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
 
 		<script src="../../lib/three.min.js"></script>
-
-
 		<script src="js/ImprovedNoise.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
-
-
 		<script src="js/wip/TypedGeometry.js"></script>
 		<script src="js/wip/IndexedTypedGeometry.js"></script>
 		<script src="js/wip/PlaneTypedGeometry.js"></script>
-
 		<script src="js/controls/OrbitControls.js"></script>
 		
 		<script>
 			var g4 = require('g4');
 			if ( ! Detector.webgl ) {
-
 				Detector.addGetWebGLMessage();
 				document.getElementById( 'container' ).innerHTML = "";
-
 			}
 
 			var container, stats;
-
 			var camera, controls, scene, renderer;
-
 			var mesh;
 			var car;
 			var g4_object;
@@ -95,27 +86,13 @@
 
 				scene = new THREE.Scene();
 
+				/////////////////////////////////////////////////
+				// The g4_object is attached directly to the scene
+				// its p&o will be overwritten by the tracker.
+				/////////////////////////////////////////////////
 				g4_object = new THREE.Object3D();
-				tracker_to_user = new THREE.Object3D();
-				scene.add(tracker_to_user);
-				tracker_to_user.add(g4_object);
-
+				scene.add(g4_object);
 				
-
-				/*
-				var axis = new THREE.Vector3(0,0,1);
-				var rad = -90 * Math.PI / 180;
-				tracker_to_user.rotateOnAxis(axis,rad);
-				
-				
-				axis = new THREE.Vector3(0,0,1);
-				rad = 90 * Math.PI / 180;
-				tracker_to_user.rotateOnAxis(axis,rad);
-
-				axis = new THREE.Vector3(1,0,0);
-				rad = -90 * Math.PI / 180;
-				tracker_to_user.rotateOnAxis(axis,rad);
-				*/
 				
 				var taxes = buildAxes( 1000 );
 				g4_object.add( taxes );
@@ -251,25 +228,24 @@
 				    material
 				  );
 				  
-				  //mesh.rotation.y = -Math.PI/5;
+				  ///////////////////////////////////////////////////////
+				  //
+				  // Setup the positional and rotational offset between 
+				  // the tracker (g4_object) and the car.
+				  //
+				  ///////////////////////////////////////////////////////
 				  car.position.y = 0;
 				  car.position.x = 0;
 				  car.position.z = 0;
-
-				  
 				  axis = new THREE.Vector3(0,0,1);
 				  rad = -90 * Math.PI / 180;
 				  car.rotateOnAxis(axis,rad);
-				
-				
-
-
-
 				  g4_object.add(car);
+				  ///////////////////////////////////////////////////////
 
 				});
 
-
+				
 				g4.initialize(function(err, po) {
 					var euler = new THREE.Euler(po.ori.x, po.ori.y, po.ori.z, 'ZYX');
 					g4_object.quaternion.setFromEuler(euler);
