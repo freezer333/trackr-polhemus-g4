@@ -6,7 +6,7 @@
 #define SETUP_FAILURE -2
 #define START_POLLING_FAILURE -3
 
-#define PRINT_RECORDS false
+#define PRINT_RECORDS true
 
 #define G4_SOCKET_PORT "1986"
 
@@ -19,5 +19,5 @@ struct po_req {
 struct po_sample {
 	int frame_number;
 	float pos[3];
-	float ori[4];
+	float ori[3];
 } ;

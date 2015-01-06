@@ -82,9 +82,9 @@ struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
 
 void sample_to_string(po_sample sample, char buffer[], int bufferSize) {
-	sprintf_s(buffer,bufferSize, "%i|%f|%f|%f|%f|%f|%f|%f",
+	sprintf_s(buffer,bufferSize, "%i|%f|%f|%f|%f|%f|%f",
 		sample.frame_number, sample.pos[0], sample.pos[1], sample.pos[2], 
-		sample.ori[0], sample.ori[1], sample.ori[2], sample.ori[3]);
+		sample.ori[0], sample.ori[1], sample.ori[2]);
 }
 
 void run_server() {
@@ -192,7 +192,7 @@ void Initialize(  )
 	_tcsncpy_s(g_G4CFilePath, _countof(g_G4CFilePath), G4C_PATH, _tcslen(G4C_PATH));
 	g_bCnxReady = FALSE;
 	g_dwStationMap = 0;
-	g_ePNOOriUnits = E_PDI_ORI_QUATERNION;
+	g_ePNOOriUnits = E_PDI_ORI_EULER_DEGREE;
 }
 
 
@@ -393,6 +393,11 @@ void poll()
 //	G4_SENSORDATA sd[G4_MAX_SENSORS_PER_HUB]; //96
 //}*LPG4_HUBDATA,G4_HUBDATA;	//	112 bytes
 
+
+double to_radians(double degrees) {
+	const double pi = 3.141592653589793;
+	return degrees * pi / 180.0;
+}
 void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 {
 	
@@ -424,11 +429,10 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 					
 				if ( update_mutex.try_lock() ) {
 					if ( PRINT_RECORDS ) {
-						_stprintf_s( szFrame, _countof(szFrame), _T("%3d %3d|  %05d|  0x%04x|  % 7.3f % 7.3f % 7.3f| % 8.3f % 8.3f % 8.3f\r\n"),
-								pHubFrame->nHubID, pSD->nSnsID,
-								pHubFrame->nFrameCount, pHubFrame->dwDigIO,
+						_stprintf_s( szFrame, _countof(szFrame), _T("|  %05d|  % 7.3f % 7.3f % 7.3f| % 8.3f % 8.3f % 8.3f \r\n"),
+								pHubFrame->nFrameCount,
 								pSD->pos[0], pSD->pos[1], pSD->pos[2],
-								pSD->ori[0], pSD->ori[1], pSD->ori[2] );
+								pSD->ori[0], pSD->ori[1], pSD->ori[2]);
 						AddMsg( tstring(szFrame) );
 					}
 
@@ -436,10 +440,9 @@ void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 					sensor_p_o_records[pSD->nSnsID].pos[0] = pSD->pos[0];
 					sensor_p_o_records[pSD->nSnsID].pos[1] = pSD->pos[1];
 					sensor_p_o_records[pSD->nSnsID].pos[2] = pSD->pos[2];
-					sensor_p_o_records[pSD->nSnsID].ori[0] = pSD->ori[0];
-					sensor_p_o_records[pSD->nSnsID].ori[1] = pSD->ori[1];
-					sensor_p_o_records[pSD->nSnsID].ori[2] = pSD->ori[2];
-					sensor_p_o_records[pSD->nSnsID].ori[3] = pSD->ori[3];
+					sensor_p_o_records[pSD->nSnsID].ori[0] = to_radians(pSD->ori[0]);
+					sensor_p_o_records[pSD->nSnsID].ori[1] = to_radians(pSD->ori[1]);
+					sensor_p_o_records[pSD->nSnsID].ori[2] = to_radians(pSD->ori[2]);
 					update_mutex.unlock();
 				}
 			}
