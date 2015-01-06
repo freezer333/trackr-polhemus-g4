@@ -1,0 +1,23 @@
+{
+  "name": "g4",
+  "version": "0.0.0",
+  "description": "client code for trackr implementation of Polhemus G4 system",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/freezer333/trackr"
+  },
+  "keywords": [
+    "vr",
+    "tracking",
+    "polhemus"
+  ],
+  "author": "Scott Frees",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/freezer333/trackr/issues"
+  }
+}
