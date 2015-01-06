@@ -52,8 +52,8 @@
 		<script src="js/wip/IndexedTypedGeometry.js"></script>
 		<script src="js/wip/PlaneTypedGeometry.js"></script>
 
-		<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
-		<script src="js/controls/TrackballControls.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		
 		<script>
 			var g4 = require('g4');
 			if ( ! Detector.webgl ) {
@@ -87,7 +87,7 @@
 				container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 60, 
 					window.innerWidth / window.innerHeight, 1, 1000 );
-			  	camera.position.z = 500;
+			  	camera.position.x = -500;
 
 			  	controls = new THREE.OrbitControls( camera );
 			  	controls.addEventListener( 'change', render );
@@ -268,12 +268,7 @@
 
 				});
 
-
-
-				g4.initialize(function(err, po) {
-						
-					var tq = new THREE.Quaternion(po.ori.x, po.ori.y, po.ori.z, po.ori.w)
-					/*var a = new THREE.Euler( 0, 0, 0, 'XYZ' );
+/*var a = new THREE.Euler( 0, 0, 0, 'XYZ' );
 					a.setFromQuaternion(tq);
 					//var b = new THREE.Euler( a.y, -a.z, a.x, 'XYZ' );
 					var b = new THREE.Euler( a.x, a.y, a.z, 'XYZ' );
@@ -283,11 +278,16 @@
 					//console.log(newq.x + ", " + newq.y + ", " + newq.z + ", " + newq.z);
 					console.log("---------------------------------------------------");
 					*/
-					g4_object.rotation.setFromQuaternion(tq);
 
-					g4_object.position.x = po.pos.x * 5;
-					g4_object.position.y = po.pos.y * 5;
-					g4_object.position.z = po.pos.z * 5;
+				g4.initialize(function(err, po) {
+						
+					/*var tq = new THREE.Quaternion(po.ori.x, po.ori.y, po.ori.z, po.ori.w)
+					
+					g4_object.rotation.setFromQuaternion(tq);*/
+
+					g4_object.position.x = po.pos.x;
+					g4_object.position.y = po.pos.y;
+					g4_object.position.z = po.pos.z;
 
 					//console.log(po.ori);
 
