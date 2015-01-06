@@ -394,9 +394,9 @@ void poll()
 //}*LPG4_HUBDATA,G4_HUBDATA;	//	112 bytes
 
 
-double to_radians(double degrees) {
-	const double pi = 3.141592653589793;
-	return degrees * pi / 180.0;
+inline float to_radians(float degrees) {
+	const float pi = 3.141592653589793f;
+	return degrees * pi / 180.0f;
 }
 void ParseG4NativeFrame( PBYTE pBuf, DWORD dwSize )
 {

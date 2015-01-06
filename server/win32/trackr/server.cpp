@@ -24,8 +24,6 @@ SOCKET build_listen_socket(){
     struct addrinfo *result = NULL;
     struct addrinfo hints;
 
-    int iSendResult;
-   
     
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
