@@ -82,19 +82,22 @@ struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
 
 
-void append_po(po_sample sample, int sensor, char buffer[], int bufferSize) {
+void append_po(po_sample sample, int sensor, char buffer[], int bufferSize, bool last) {
 	char tmp [256];
-	sprintf_s(tmp,256, "|%i|%i|%f|%f|%f|%f|%f|%f",
+	sprintf_s(tmp,256, "%i|%i|%f|%f|%f|%f|%f|%f",
 				sample.frame_number, sensor, 
 				sample.pos[0], sample.pos[1], sample.pos[2], 
 				sample.ori[0], sample.ori[1], sample.ori[2]);
 	strncat(buffer, tmp, bufferSize);
+	if (!last ) {
+		strncat(buffer, "|", bufferSize);
+	}
 }
 void sample_to_string(po_sample sample[], po_req request, char buffer[], int bufferSize) {
 	memset(buffer, 0, bufferSize);
-	if ( request.sensor_0 ) append_po(sample[0], 1, buffer, bufferSize);
-	if ( request.sensor_1 ) append_po(sample[1], 2, buffer, bufferSize);
-	if ( request.sensor_2 ) append_po(sample[2], 3, buffer, bufferSize);
+	if ( request.sensor_0 ) append_po(sample[0], 1, buffer, bufferSize, !request.sensor_1 && !request.sensor_2);
+	if ( request.sensor_1 ) append_po(sample[1], 2, buffer, bufferSize, !request.sensor_2);
+	if ( request.sensor_2 ) append_po(sample[2], 3, buffer, bufferSize, true);
 }
 
 void run_server() {
