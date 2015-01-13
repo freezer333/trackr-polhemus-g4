@@ -81,17 +81,27 @@ mutex update_mutex;
 struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
 
-void sample_to_string(po_sample sample, char buffer[], int bufferSize) {
-	sprintf_s(buffer,bufferSize, "%i|%f|%f|%f|%f|%f|%f",
-		sample.frame_number, sample.pos[0], sample.pos[1], sample.pos[2], 
-		sample.ori[0], sample.ori[1], sample.ori[2]);
+
+void append_po(po_sample sample, int sensor, char buffer[], int bufferSize) {
+	char tmp [256];
+	sprintf_s(tmp,256, "|%i|%i|%f|%f|%f|%f|%f|%f",
+				sample.frame_number, sensor, 
+				sample.pos[0], sample.pos[1], sample.pos[2], 
+				sample.ori[0], sample.ori[1], sample.ori[2]);
+	strncat(buffer, tmp, bufferSize);
+}
+void sample_to_string(po_sample sample[], po_req request, char buffer[], int bufferSize) {
+	memset(buffer, 0, bufferSize);
+	if ( request.sensor_0 ) append_po(sample[0], 1, buffer, bufferSize);
+	if ( request.sensor_1 ) append_po(sample[1], 2, buffer, bufferSize);
+	if ( request.sensor_2 ) append_po(sample[2], 3, buffer, bufferSize);
 }
 
 void run_server() {
-	struct po_sample sample;
+	struct po_sample sample[3];
 	struct po_req request;
 	SOCKET ClientSocket = INVALID_SOCKET;
-	char buffer[100];
+	char buffer[1000];
 	int iSendResult ;
 	while ( 1 ) {
 		cout << "Listening on " << G4_SOCKET_PORT << endl;
@@ -122,11 +132,10 @@ void run_server() {
 				iResult = recv(ClientSocket, (char *)&request, sizeof(request), 0);
 				if (iResult > 0) {
 					update_mutex.lock();
-					memcpy(&sample, &(sensor_p_o_records[0]), sizeof(po_sample));
+					memcpy(&sample, sensor_p_o_records, sizeof(po_sample)*3);
 					update_mutex.unlock();
-
-					sample_to_string(sample, buffer, 100);
-					iSendResult = send( ClientSocket, buffer, strnlen(buffer, 100), 0 );
+					sample_to_string(sample, request, buffer, 1000);
+					iSendResult = send( ClientSocket, buffer, strnlen(buffer, 1000), 0 );
 					if (iSendResult == SOCKET_ERROR) {
 						printf("send failed with error: %d\n", WSAGetLastError());
 						closesocket(ClientSocket);

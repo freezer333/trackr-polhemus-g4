@@ -5,6 +5,10 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iostream>
 
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
@@ -24,14 +28,45 @@ struct po_req {
 
 struct po_sample {
 	int frame_number;
+	int sensor_number;
 	float pos[3];
 	float ori[3];
 } ;
 
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+		if ( !item.empty() ) {
+			elems.push_back(item);
+		}
+    }
+    return elems;
+}
+std::vector<po_sample> make_samples(const std::string &s) {
+	std::vector<std::string> tokens;
+    split(s, '|', tokens);
+	std::vector<po_sample> samples;
+	for ( int i = 0; i < tokens.size(); i+= 8) {
+		struct po_sample sample;
+		sample.frame_number = stoi(tokens[i]);
+		sample.sensor_number = stoi(tokens[i+1]);
+		sample.pos[0] = stof(tokens[i+2]);
+		sample.pos[1] = stof(tokens[i+3]);
+		sample.pos[2] = stof(tokens[i+4]);
+		sample.ori[0] = stof(tokens[i+5]);
+		sample.ori[1] = stof(tokens[i+6]);
+		sample.ori[2] = stof(tokens[i+7]);
+		samples.push_back(sample);
+	}
+    return samples;
+}
+
 
 int __cdecl main(int argc, char **argv) 
 {
-	struct po_sample sample;
+	char recv_buffer[1000];
+	
 	struct po_req request;
 	request.sensor_0 = true;
 	request.sensor_1 = true;
@@ -99,7 +134,7 @@ int __cdecl main(int argc, char **argv)
 	int sends = 0;
 	while (1) {
 		// Send an initial buffer
-		iResult = send( ConnectSocket, sendbuf, (int)strlen(sendbuf), 0 );
+		iResult = send( ConnectSocket, sendbuf, sizeof(po_req), 0 );
 		if (iResult == SOCKET_ERROR) {
 			printf("send failed with error: %d\n", WSAGetLastError());
 			closesocket(ConnectSocket);
@@ -109,9 +144,13 @@ int __cdecl main(int argc, char **argv)
 		sends++;
 		
 		do {
-			iResult = recv(ConnectSocket, (char *)&sample, sizeof(po_sample), 0);
+			iResult = recv(ConnectSocket, recv_buffer, 1000, 0);
 			if ( iResult > 0 ) {
-				printf("%d -> %f, %f, %f\n", sample.frame_number, sample.pos[0], sample.pos[1], sample.pos[2]);
+				recv_buffer[iResult] = '\0';
+				std::vector<po_sample> samples = make_samples(recv_buffer);
+				printf("%3.3f %3.3f %3.3f\t%3.3f %3.3f %3.3f\n", 
+					samples[0].pos[0],samples[0].pos[1], samples[0].pos[2],
+					samples[1].pos[0],samples[1].pos[1], samples[1].pos[2]);
 			}
 			else if ( iResult == 0 )
 				printf("All data recieved\n");
