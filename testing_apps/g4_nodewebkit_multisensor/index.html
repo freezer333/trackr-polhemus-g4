@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - geometry - minecraft</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #61443e;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+
+				background-color: #bfd1e5;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+
+			a {
+
+				color: #a06851;
+			}
+
+			#oldie {
+				background:rgb(100,0,0) !important;
+				color:#fff !important;
+				margin-top:10em !important;
+			}
+			#oldie a { color:#fff }
+
+		</style>
+	</head>
+	<body>
+
+		<div id="container"><br /><br /><br /><br /><br />Generating world...</div>
+
+		<script src="../../lib/three.min.js"></script>
+		<script src="js/ImprovedNoise.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script src="js/wip/TypedGeometry.js"></script>
+		<script src="js/wip/IndexedTypedGeometry.js"></script>
+		<script src="js/wip/PlaneTypedGeometry.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		
+		<script>
+			var g4 = require('g4');
+			if ( ! Detector.webgl ) {
+				Detector.addGetWebGLMessage();
+				document.getElementById( 'container' ).innerHTML = "";
+			}
+
+			var container, stats;
+			var camera, controls, scene, renderer;
+			var mesh;
+			var car;
+			var g4_object;
+			var tracker_coord_frame;
+
+
+			var worldWidth = 128, worldDepth = 128,
+			worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2,
+			data = generateHeight( worldWidth, worldDepth );
+
+			var clock = new THREE.Clock();
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.getElementById( 'container' );
+				camera = new THREE.PerspectiveCamera( 60, 
+					window.innerWidth / window.innerHeight, 1, 1000 );
+			  	camera.position.x = -500;
+
+			  	controls = new THREE.OrbitControls( camera );
+			  	controls.addEventListener( 'change', render );
+
+
+				scene = new THREE.Scene();
+
+				transform = new THREE.Object3D();
+				transform.position.x = 0;
+				transform.position.y = 200;
+				transform.position.z = 0;
+
+
+				sensor_1 = new THREE.Object3D();
+				transform.add(sensor_1);
+				
+				sensor_2 = new THREE.Object3D();
+				transform.add(sensor_2);
+				
+				scene.add(transform);
+
+
+				
+				sensor_1.add( buildAxes( 1000 ) );
+				sensor_2.add( buildAxes( 1000 ) );
+
+				// sides
+
+				var matrix = new THREE.Matrix4();
+
+				var pxGeometry = new THREE.PlaneTypedGeometry( 100, 100 );
+				pxGeometry.uvs[ 1 ] = 0.5;
+				pxGeometry.uvs[ 3 ] = 0.5;
+				pxGeometry.applyMatrix( matrix.makeRotationY( Math.PI / 2 ) );
+				pxGeometry.applyMatrix( matrix.makeTranslation( 50, 0, 0 ) );
+
+				var nxGeometry = new THREE.PlaneTypedGeometry( 100, 100 );
+				nxGeometry.uvs[ 1 ] = 0.5;
+				nxGeometry.uvs[ 3 ] = 0.5;
+				nxGeometry.applyMatrix( matrix.makeRotationY( - Math.PI / 2 ) );
+				nxGeometry.applyMatrix( matrix.makeTranslation( - 50, 0, 0 ) );
+
+				var pyGeometry = new THREE.PlaneTypedGeometry( 100, 100 );
+				pyGeometry.uvs[ 5 ] = 0.5;
+				pyGeometry.uvs[ 7 ] = 0.5;
+				pyGeometry.applyMatrix( matrix.makeRotationX( - Math.PI / 2 ) );
+				pyGeometry.applyMatrix( matrix.makeTranslation( 0, -10, 0 ) );
+
+				var pzGeometry = new THREE.PlaneTypedGeometry( 100, 100 );
+				pzGeometry.uvs[ 1 ] = 0.5;
+				pzGeometry.uvs[ 3 ] = 0.5;
+				pzGeometry.applyMatrix( matrix.makeTranslation( 0, 0, 50 ) );
+
+				var nzGeometry = new THREE.PlaneTypedGeometry( 100, 100 );
+				nzGeometry.uvs[ 1 ] = 0.5;
+				nzGeometry.uvs[ 3 ] = 0.5;
+				nzGeometry.applyMatrix( matrix.makeRotationY( Math.PI ) );
+				nzGeometry.applyMatrix( matrix.makeTranslation( 0, 0, -50 ) );
+
+				//
+
+				var geometry = new THREE.TypedGeometry( worldWidth * worldDepth * 2 * 5 ); // 2 triangles, 5 possible sides
+
+				for ( var z = 0; z < worldDepth; z ++ ) {
+
+					for ( var x = 0; x < worldWidth; x ++ ) {
+
+						var h = getY( x, z );
+
+						matrix.makeTranslation(
+							x * 100 - worldHalfWidth * 100,
+							0,
+							z * 100 - worldHalfDepth * 100
+						);
+
+						var px = getY( x + 1, z );
+						var nx = getY( x - 1, z );
+						var pz = getY( x, z + 1 );
+						var nz = getY( x, z - 1 );
+
+						geometry.merge( pyGeometry, matrix );
+
+						if ( ( px != h && px != h + 1 ) || x == 0 ) {
+
+							geometry.merge( pxGeometry, matrix );
+
+						}
+
+						if ( ( nx != h && nx != h + 1 ) || x == worldWidth - 1 ) {
+
+							geometry.merge( nxGeometry, matrix );
+
+						}
+
+						if ( ( pz != h && pz != h + 1 ) || z == worldDepth - 1 ) {
+
+							geometry.merge( pzGeometry, matrix );
+
+						}
+
+						if ( ( nz != h && nz != h + 1 ) || z == 0 ) {
+
+							geometry.merge( nzGeometry, matrix );
+
+						}
+
+					}
+
+				}
+
+				geometry.computeBoundingSphere();
+
+				var texture = THREE.ImageUtils.loadTexture( 'textures/minecraft/atlas.png' );
+				texture.magFilter = THREE.NearestFilter;
+				texture.minFilter = THREE.LinearMipMapLinearFilter;
+
+				var mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { map: texture, ambient: 0xbbbbbb } ) );
+				scene.add( mesh );
+
+				var ambientLight = new THREE.AmbientLight( 0xcccccc );
+				scene.add( ambientLight );
+
+				var directionalLight = new THREE.DirectionalLight( 0xffffff, 2 );
+				directionalLight.position.set( 1, 1, 0.5 ).normalize();
+				scene.add( directionalLight );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setClearColor( 0xbfd1e5, 1 );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container.innerHTML = "";
+
+				container.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+
+				var loader = new THREE.JSONLoader(); // init the loader util
+
+				// init loading
+				loader.load('models/car.js', function (geometry) {
+				  // create a new material
+				  var material = new THREE.MeshLambertMaterial({
+				    map: THREE.ImageUtils.loadTexture('models/textures/gtare.jpg'),  // specify and load the texture
+				    colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+				  });
+				  
+				  // create a mesh with models geometry and material
+				  car = new THREE.Mesh(
+				    geometry,
+				    material
+				  );
+				  
+				  ///////////////////////////////////////////////////////
+				  //
+				  // Setup the positional and rotational offset between 
+				  // the tracker (sensor_1) and the car.
+				  //
+				  ///////////////////////////////////////////////////////
+				  car.position.y = 0;
+				  car.position.x = 0;
+				  car.position.z = 0;
+				  axis = new THREE.Vector3(0,0,1);
+				  rad = -90 * Math.PI / 180;
+				  car.rotateOnAxis(axis,rad);
+				  sensor_1.add(car);
+				  ///////////////////////////////////////////////////////
+
+				});
+				loader.load('models/car.js', function (geometry) {
+				  // create a new material
+				  var material = new THREE.MeshLambertMaterial({
+				    map: THREE.ImageUtils.loadTexture('models/textures/gtare.jpg'),  // specify and load the texture
+				    colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+				  });
+				  
+				  // create a mesh with models geometry and material
+				  car2 = new THREE.Mesh(
+				    geometry,
+				    material
+				  );
+				  
+				  ///////////////////////////////////////////////////////
+				  //
+				  // Setup the positional and rotational offset between 
+				  // the tracker (sensor_2) and the car2.
+				  //
+				  ///////////////////////////////////////////////////////
+				  car2.position.y = 0;
+				  car2.position.x = 0;
+				  car2.position.z = 0;
+				  axis = new THREE.Vector3(0,0,1);
+				  rad = -90 * Math.PI / 180;
+				  car.rotateOnAxis(axis,rad);
+				  sensor_2.add(car2);
+				  ///////////////////////////////////////////////////////
+
+				});
+				
+				g4.initialize(function(err, po_array) {
+					var euler = new THREE.Euler(po_array[0].ori.x, po_array[0].ori.y, po_array[0].ori.z, 'ZYX');
+					sensor_1.quaternion.setFromEuler(euler);
+					sensor_1.position.x = po_array[0].pos.x * 10;
+					sensor_1.position.y = po_array[0].pos.y * 10;
+					sensor_1.position.z = po_array[0].pos.z * 10;
+
+					euler = new THREE.Euler(po_array[1].ori.x, po_array[1].ori.y, po_array[1].ori.z, 'ZYX');
+					sensor_2.quaternion.setFromEuler(euler);
+					sensor_2.position.x = po_array[1].pos.x * 10;
+					sensor_2.position.y = po_array[1].pos.y * 10;
+					sensor_2.position.z = po_array[1].pos.z * 10;
+				} );
+			
+				
+
+				
+				// Add axes
+				axes = buildAxes( 1000 );
+				scene.add( axes );
+
+	
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function generateHeight( width, height ) {
+
+				var data = [], perlin = new ImprovedNoise(),
+				size = width * height, quality = 2, z = Math.random() * 100;
+
+				for ( var j = 0; j < 4; j ++ ) {
+
+					if ( j == 0 ) for ( var i = 0; i < size; i ++ ) data[ i ] = 0;
+
+					for ( var i = 0; i < size; i ++ ) {
+
+						var x = i % width, y = ( i / width ) | 0;
+						data[ i ] += perlin.noise( x / quality, y / quality, z ) * quality;
+
+
+					}
+
+					quality *= 4
+
+				}
+
+				return data;
+
+			}
+
+			function getY( x, z ) {
+
+				return 0;//( data[ x + z * worldWidth ] * 0.2 ) | 0;
+
+			}
+
+			//
+
+			function animate() {
+				g4.poll(null);
+				requestAnimationFrame( animate );
+				controls.update();
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+
+
+				renderer.render( scene, camera );
+			}
+
+			function buildAxes( length ) {
+				var axes = new THREE.Object3D();
+
+				axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( length, 0, 0 ), 0xFF0000, false ) ); // +X
+				axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( -length, 0, 0 ), 0xFF0000, true) ); // -X
+				axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, length, 0 ), 0x00FF00, false ) ); // +Y
+				axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, -length, 0 ), 0x00FF00, true ) ); // -Y
+				axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, length ), 0x0000FF, false ) ); // +Z
+				axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, -length ), 0x0000FF, true ) ); // -Z
+
+				return axes;
+
+			}
+
+			function buildAxis( src, dst, colorHex, dashed ) {
+				var geom = new THREE.Geometry(),
+					mat; 
+
+				if(dashed) {
+					mat = new THREE.LineDashedMaterial({ linewidth: 20, color: colorHex, dashSize: 3, gapSize: 3 });
+				} else {
+					mat = new THREE.LineBasicMaterial({ linewidth: 20, color: colorHex });
+				}
+
+				geom.vertices.push( src.clone() );
+				geom.vertices.push( dst.clone() );
+				geom.computeLineDistances(); // This one is SUPER important, otherwise dashed lines will appear as simple plain lines
+
+				var axis = new THREE.Line( geom, mat, THREE.LinePieces );
+
+				return axis;
+
+			}
+
+		</script>
+
+	</body>
+</html>

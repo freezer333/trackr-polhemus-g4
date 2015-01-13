@@ -25,6 +25,7 @@ var g4 = {
 			try {
 				var fields = data.toString().split("|");
 				var po_array = [];
+				fields.shift();
 				for ( var i = 0; i < fields.length; i+= 8) {
 					var po = {
 						frame : fields[i + 0], 
