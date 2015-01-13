@@ -1,8 +1,0 @@
-{
-  "name": "nw-demo",
-  "main": "index.html",
-  "dependencies": {
-    "chai": "~1.10.0", 
-    "g4" : "~0.0.1"
-  }
-}
