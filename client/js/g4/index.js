@@ -24,22 +24,25 @@ var g4 = {
 		this.socket.on('data', function(data) {
 			try {
 				var fields = data.toString().split("|");
-				var po = {
-					frame : fields[0], 
-					sensor : fields[1],
-					pos : {
-						x : fields[2],
-						y : fields[3],
-						z : fields[4],
-					}, 
-					ori : {
-						x : fields[5], 
-						y : fields[6], 
-						z : fields[7], 
-						w : fields[8]
+				var po_array = [];
+				for ( var i = 0; i < fields.length; i+= 8) {
+					var po = {
+						frame : fields[i + 0], 
+						sensor : fields[i + 1],
+						pos : {
+							x : fields[i + 2],
+							y : fields[i + 3],
+							z : fields[i + 4],
+						}, 
+						ori : {
+							x : fields[i + 5], 
+							y : fields[i + 6], 
+							z : fields[i + 7], 
+						}
 					}
+					po_array.push(po);
 				}
-				callback(null, po);
+				callback(null, po_array);
 			}
 			catch (err) {
 				console.log(err);

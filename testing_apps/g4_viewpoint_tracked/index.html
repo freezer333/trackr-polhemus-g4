@@ -92,13 +92,18 @@
 				transform.position.z = 0;
 
 
-				g4_object = new THREE.Object3D();
-				transform.add(g4_object);
+				sensor_1 = new THREE.Object3D();
+				transform.add(sensor_1);
+				
+				sensor_2 = new THREE.Object3D();
+				transform.add(sensor_2);
+				
 				scene.add(transform);
+
+
 				
-				
-				var taxes = buildAxes( 1000 );
-				g4_object.add( taxes );
+				sensor_1.add( buildAxes( 1000 ) );
+				sensor_2.add( buildAxes( 1000 ) );
 
 				// sides
 
@@ -234,7 +239,7 @@
 				  ///////////////////////////////////////////////////////
 				  //
 				  // Setup the positional and rotational offset between 
-				  // the tracker (g4_object) and the car.
+				  // the tracker (sensor_1) and the car.
 				  //
 				  ///////////////////////////////////////////////////////
 				  car.position.y = 0;
@@ -243,18 +248,54 @@
 				  axis = new THREE.Vector3(0,0,1);
 				  rad = -90 * Math.PI / 180;
 				  car.rotateOnAxis(axis,rad);
-				  g4_object.add(car);
+				  sensor_1.add(car);
 				  ///////////////////////////////////////////////////////
 
 				});
+				loader.load('models/car.js', function (geometry) {
+				  // create a new material
+				  var material = new THREE.MeshLambertMaterial({
+				    map: THREE.ImageUtils.loadTexture('models/textures/gtare.jpg'),  // specify and load the texture
+				    colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+				    colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+				  });
+				  
+				  // create a mesh with models geometry and material
+				  car2 = new THREE.Mesh(
+				    geometry,
+				    material
+				  );
+				  
+				  ///////////////////////////////////////////////////////
+				  //
+				  // Setup the positional and rotational offset between 
+				  // the tracker (sensor_2) and the car2.
+				  //
+				  ///////////////////////////////////////////////////////
+				  car2.position.y = 0;
+				  car2.position.x = 0;
+				  car2.position.z = 0;
+				  axis = new THREE.Vector3(0,0,1);
+				  rad = -90 * Math.PI / 180;
+				  car.rotateOnAxis(axis,rad);
+				  sensor_2.add(car2);
+				  ///////////////////////////////////////////////////////
 
+				});
 				
-				g4.initialize(function(err, po) {
-					var euler = new THREE.Euler(po.ori.x, po.ori.y, po.ori.z, 'ZYX');
-					g4_object.quaternion.setFromEuler(euler);
-					g4_object.position.x = po.pos.x * 10;
-					g4_object.position.y = po.pos.y * 10;
-					g4_object.position.z = po.pos.z * 10;
+				g4.initialize(function(err, po_array) {
+					var euler = new THREE.Euler(po_array[0].ori.x, po_array[0].ori.y, po_array[0].ori.z, 'ZYX');
+					sensor_1.quaternion.setFromEuler(euler);
+					sensor_1.position.x = po_array[0].pos.x * 10;
+					sensor_1.position.y = po_array[0].pos.y * 10;
+					sensor_1.position.z = po_array[0].pos.z * 10;
+
+					euler = new THREE.Euler(po_array[1].ori.x, po_array[1].ori.y, po_array[1].ori.z, 'ZYX');
+					sensor_2.quaternion.setFromEuler(euler);
+					sensor_2.position.x = po_array[1].pos.x * 10;
+					sensor_2.position.y = po_array[1].pos.y * 10;
+					sensor_2.position.z = po_array[1].pos.z * 10;
 				} );
 			
 				
