@@ -2,10 +2,10 @@ var net = require('net');
 
 var g4 = {
 
-	initialize : function(callback, host, port) {
+	initialize : function(callback, sensor_opt_in, host, port) {
 		var hostname = host || "localhost";
 		var port_number = port || 1986;
-
+		this.sensor_opt_in = sensor_opt_in || [true, true, true];
 		this.callback = callback;
 		this.socket = new net.Socket();
 		this.socket.connect(port_number, hostname, function(err) {
@@ -22,33 +22,33 @@ var g4 = {
 		});
 
 		this.socket.on('data', function(data) {
-
 			try {
 				var fields = data.toString().split("|");
 				var po = {
+					frame : fields[0], 
+					sensor : fields[1],
 					pos : {
-						x : fields[1],
-						y : fields[2],
-						z : fields[3],
+						x : fields[2],
+						y : fields[3],
+						z : fields[4],
 					}, 
 					ori : {
-						x : fields[4], 
-						y : fields[5], 
-						z : fields[6], 
-						w : fields[7]
+						x : fields[5], 
+						y : fields[6], 
+						z : fields[7], 
+						w : fields[8]
 					}
 				}
 				callback(null, po);
 			}
 			catch (err) {
 				console.log(err);
-			}
-		    
+			}    
 		});
 	}, 
 
 	poll  : function (callback) {
-		req = new Buffer([true, true, false]);
+		req = new Buffer(this.sensor_opt_in);
 		this.socket.write(req);
 	}
 

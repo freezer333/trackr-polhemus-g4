@@ -1,6 +1,6 @@
 {
   "name": "g4",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "client code for trackr implementation of Polhemus G4 system",
   "main": "index.js",
   "scripts": {
