@@ -29,7 +29,7 @@ void error(const char *msg)
 
 
 void append_po(po_sample sample, int sensor, char buffer[], int bufferSize, bool last) {
-	char tmp [256];
+	char tmp [512];
 	sprintf(tmp, "%i|%i|%f|%f|%f|%f|%f|%f",
 				sample.frame_number, sensor, 
 				sample.pos[0], sample.pos[1], sample.pos[2], 
@@ -49,10 +49,11 @@ void sample_to_string(po_sample sample[], po_req request, char buffer[], int buf
 
 void server() {
 	
-	
+	struct po_sample sample[3];
+	struct po_req request;
 	int sockfd, newsockfd, portno;
     socklen_t clilen;
-    char buffer[256];
+    char buffer[1024];
     struct sockaddr_in serv_addr, cli_addr;
     int n;
     struct pollfd fd;
@@ -76,16 +77,19 @@ void server() {
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
 
-    cout << "Accepting connections on port" << G4_SOCKET_PORT << endl;
     
 
-     fd.fd = sockfd;
- 	 fd.events = POLLIN;
+    fd.fd = sockfd;
+ 	fd.events = POLLIN;
 
     // Now just wait for connections and serve the connection.  We are not supporting multiple clients
     // simultaneously just yet...
+   	int timeouts = 0;
     while (serving_active) {
-    	int rc = poll(&fd, 1, 1000);
+     	
+     	if ( timeouts == 0 ) cout << "Accepting connections on port " << G4_SOCKET_PORT << endl;
+   
+   		int rc = poll(&fd, 1, 1000);
     	
 	    /***********************************************************/
 	    /* Check to see if the poll call failed.                   */
@@ -100,24 +104,41 @@ void server() {
 	    /* Check to see if the 3 minute time out expired.          */
 	    /***********************************************************/
 	    else if (rc > 0) {
-	    	cout << "Client connected, serving requests..." << endl;
+	    	timeouts =0;
+	    	cout << "\tClient connected, serving requests..." << endl;
 	    	newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 		    if (newsockfd < 0)  {
 		      	error("ERROR on accept");
 		    }
 		    else {
-		    	bzero(buffer,256);
-		    	n = read(newsockfd,buffer,255);
-		    
-		    	if (n < 0) error("ERROR reading from socket");
-		    	printf("Here is the message: %s\n",buffer);
-		    	n = write(newsockfd,"I got your message",18);
-		    	if (n < 0) error("ERROR writing to socket");
+		    	bool active = true;
+		    	do {
+					int n = read(newsockfd, (char *)&request, sizeof(request));
+					if (n > 0) {
+						//update_mutex.lock();
+						memset(&sample, 0, sizeof(po_sample)*3);
+						//memcpy(&sample, sensor_p_o_records, sizeof(po_sample)*3);
+						//update_mutex.unlock();
+						sample_to_string(sample, request, buffer, 1024);
+						n = write( newsockfd, buffer, strnlen(buffer, 1024));
+						if (n != strnlen(buffer, 1024)) {
+							printf("send failed with error\n");
+							active = false;
+						}
+					}
+					else  {
+						printf("\tSocket (read) timedout\n");
+						active = false;
+					}
+				} while (active);
 		    	close(newsockfd);
 		    }
 
-		    cout << "Client disconnected." << endl;
+		    cout << "\tClient disconnected." << endl;
 		    
+		}
+		else {
+			timeouts++;
 		}
     }
     
