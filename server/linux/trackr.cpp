@@ -116,10 +116,11 @@ void server() {
 					int n = read(newsockfd, (char *)&request, sizeof(request));
 					if (n > 0) {
 						//update_mutex.lock();
-						memset(&sample, 0, sizeof(po_sample)*3);
-						//memcpy(&sample, sensor_p_o_records, sizeof(po_sample)*3);
+						//memset(&sample, 0, sizeof(po_sample)*3);
+						memcpy(&sample, sensor_p_o_records, sizeof(po_sample)*3);
 						//update_mutex.unlock();
 						sample_to_string(sample, request, buffer, 1024);
+						cout << buffer << endl;
 						n = write( newsockfd, buffer, strnlen(buffer, 1024));
 						if (n != strnlen(buffer, 1024)) {
 							printf("send failed with error\n");
@@ -141,7 +142,7 @@ void server() {
 			timeouts++;
 		}
     }
-    
+  	  
     close(sockfd);
     // shutdown the tracker
 	polling_active = false;
@@ -181,6 +182,52 @@ int get_hubs(int sysId) {
   	}
  	return cs.cds.iParam;
 }
+inline float to_radians(float degrees) {
+	const float pi = 3.141592653589793f;
+	return degrees * pi / 180.0f;
+}
+void get_sample(int sysId, int hubs) {
+	G4_CMD_STRUCT cs;
+  	int* hubList=new int[hubs];  
+  	int res;
+
+  	cs.cmd=G4_CMD_GET_ACTIVE_HUBS;
+  	cs.cds.id=G4_CREATE_ID(sysId,0,0);
+  	cs.cds.action=G4_ACTION_GET;
+  	cs.cds.pParam=hubList;
+  	res=g4_set_query(&cs);
+  	G4_FRAMEDATA* fd=new G4_FRAMEDATA;
+  	res=g4_get_frame_data(fd,sysId,hubList,hubs);
+  	res&=0xffff;
+  	
+  	//cout << ".";
+  	char buf[500];
+  	int len;
+  	int a = 0;
+  	if (fd->stationMap & (0x01<<a)){
+  		/*len=sprintf(buf,"Hub %d, Sensor %d, %u --  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f\n",fd->hub,a+1,
+      	  	  fd->frame,fd->sfd[a].pos[0],fd->sfd[a].pos[1],fd->sfd[a].pos[2],fd->sfd[a].ori[0],
+      	  	  fd->sfd[a].ori[1],fd->sfd[a].ori[2]);
+    	fprintf(stderr, "%s\n", buf);*/
+
+		//lock
+    	sensor_p_o_records[a].frame_number = fd->frame;
+		sensor_p_o_records[a].pos[0] = fd->sfd[a].pos[0];
+		sensor_p_o_records[a].pos[1] = fd->sfd[a].pos[1];
+		sensor_p_o_records[a].pos[2] = fd->sfd[a].pos[2];
+		/* Holy shit.  ori[0] is z, ori[1] is y, ori[2] is x.  
+		   Nice.  
+		   Reversing this so its in the customary x/y/z order for clients connecting.
+		   Where's the tylenol.
+		*/
+		sensor_p_o_records[a].ori[0] = to_radians(fd->sfd[a].ori[2]);
+		sensor_p_o_records[a].ori[1] = to_radians(fd->sfd[a].ori[1]);
+		sensor_p_o_records[a].ori[2] = to_radians(fd->sfd[a].ori[0]);
+		//unlock
+    }
+
+  	delete[] fd;
+}
 
 void run_tracker() {
 	const char* src_file=G4C_PATH;
@@ -198,7 +245,7 @@ void run_tracker() {
 
 	while (polling_active){
 		// poll and update the common variable
-		;
+		get_sample(sysId, hubs);
 	}
 	g4_close_tracker();
 	cout << "Trackr stopped" << endl;
