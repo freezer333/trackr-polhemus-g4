@@ -45,14 +45,14 @@ std::vector<po_sample> make_samples(const std::string &s) {
 	std::vector<po_sample> samples;
 	for ( int i = 0; i < tokens.size(); i+= 8) {
 		struct po_sample sample;
-		sample.frame_number = 9;//stoi(tokens[i]);
-		sample.sensor_number = 9;//stoi(tokens[i+1]);
-		sample.pos[0] = 9;//stof(tokens[i+2]);
-		sample.pos[1] = 9;//stof(tokens[i+3]);
-		sample.pos[2] = 9;//stof(tokens[i+4]);
-		sample.ori[0] = 9;//stof(tokens[i+5]);
-		sample.ori[1] = 9;//stof(tokens[i+6]);
-		sample.ori[2] = 9;//stof(tokens[i+7]);
+		sample.frame_number = stoi(tokens[i]);
+		sample.sensor_number = stoi(tokens[i+1]);
+		sample.pos[0] = stof(tokens[i+2]);
+		sample.pos[1] = stof(tokens[i+3]);
+		sample.pos[2] = stof(tokens[i+4]);
+		sample.ori[0] = stof(tokens[i+5]);
+		sample.ori[1] = stof(tokens[i+6]);
+		sample.ori[2] = stof(tokens[i+7]);
 		samples.push_back(sample);
 	}
     return samples;
