@@ -13,7 +13,7 @@
 #include <cstring>
 #include <signal.h>
 #include <sys/poll.h>
-
+#include <cmath>
 #include <pthread.h>
 
 
@@ -119,14 +119,11 @@ void server() {
 		    	do {
 					int n = read(newsockfd, (char *)&request, sizeof(request));
 					if (n > 0) {
-						//update_mutex.lock();
 						pthread_spin_lock(&spinlock);
-						//memset(&sample, 0, sizeof(po_sample)*3);
 						memcpy(&sample, sensor_p_o_records, sizeof(po_sample)*3);
 						pthread_spin_unlock(&spinlock);
-						//update_mutex.unlock();
 						sample_to_string(sample, request, buffer, 1024);
-
+						
 						n = write( newsockfd, buffer, strnlen(buffer, 1024));
 						if (n != strnlen(buffer, 1024)) {
 							printf("send failed with error\n");
@@ -212,15 +209,14 @@ void get_sample(int sysId, int hubs) {
   	pthread_spin_lock(&spinlock);
   	for ( int a = 0; a < G4_MAX_SENSORS_PER_HUB; a++ ) {
 	  	if (fd->stationMap & (0x01<<a)){
-	  		/*len=sprintf(buf,"Hub %d, Sensor %d, %u --  %.3f  %.3f  %.3f  %.3f  %.3f  %.3f\n",fd->hub,a+1,
+	  		/*if ( abs(fd->sfd[a].pos[0]) > 0) {
+	  			len=sprintf(buf,"Hub %d, Sensor %d, %u --  %.3f  %.3f  %.3f | %.3f  %.3f  %.3f\n",fd->hub,a+1,
 	      	  	  fd->frame,fd->sfd[a].pos[0],fd->sfd[a].pos[1],fd->sfd[a].pos[2],fd->sfd[a].ori[0],
 	      	  	  fd->sfd[a].ori[1],fd->sfd[a].ori[2]);
-	    	fprintf(stderr, "%s\n", buf);*/
+	    		fprintf(stderr, "%s\n", buf);
+	    	}*/
 
-			//lock
-			
-
-	    	sensor_p_o_records[a].frame_number = fd->frame;
+			sensor_p_o_records[a].frame_number = fd->frame;
 			sensor_p_o_records[a].pos[0] = fd->sfd[a].pos[0];
 			sensor_p_o_records[a].pos[1] = fd->sfd[a].pos[1];
 			sensor_p_o_records[a].pos[2] = fd->sfd[a].pos[2];
@@ -232,7 +228,7 @@ void get_sample(int sysId, int hubs) {
 			sensor_p_o_records[a].ori[0] = to_radians(fd->sfd[a].ori[2]);
 			sensor_p_o_records[a].ori[1] = to_radians(fd->sfd[a].ori[1]);
 			sensor_p_o_records[a].ori[2] = to_radians(fd->sfd[a].ori[0]);
-			//unlock
+			
 			
 
 	    }

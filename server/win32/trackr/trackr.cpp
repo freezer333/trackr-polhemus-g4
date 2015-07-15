@@ -80,7 +80,7 @@ TCHAR	g_G4CFilePath[_MAX_PATH+1];
 mutex update_mutex;
 struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 
-
+ 
 
 void append_po(po_sample sample, int sensor, char buffer[], int bufferSize, bool last) {
 	char tmp [256];

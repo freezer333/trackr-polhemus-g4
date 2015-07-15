@@ -290,7 +290,7 @@
 					sensor_1.position.x = po_array[0].pos.x * 10;
 					sensor_1.position.y = po_array[0].pos.y * 10;
 					sensor_1.position.z = po_array[0].pos.z * 10;
-
+					
 					euler = new THREE.Euler(po_array[1].ori.x, po_array[1].ori.y, po_array[1].ori.z, 'ZYX');
 					sensor_2.quaternion.setFromEuler(euler);
 					sensor_2.position.x = po_array[1].pos.x * 10;
