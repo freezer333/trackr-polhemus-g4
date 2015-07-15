@@ -21,10 +21,10 @@ public class G4Sensor : MonoBehaviour {
 	{
 		Component[] all_g4s = Object.FindObjectsOfType<G4>();
 
-		// Make sure the scene contains only one instance of the G4ManagerScript
+		// Make sure the scene contains only one instance of the G4
 		if( all_g4s.Length != 1 )
 		{
-			Debug.LogError( "The scene <b>must</b> contain a single instance of the G4ManagerScript" +
+			Debug.LogError( "The scene <b>must</b> contain a single instance of the G4" +
 			               " for the sensors to work." );
 			Debug.Break();
 			g4 = null;
@@ -36,7 +36,7 @@ public class G4Sensor : MonoBehaviour {
 			// Warn the user if the sensor is turned off (make a best attempt at quelling unneeded frustration)
 			if( m_sensorNumber == SensorNumber.OFF )
 			{
-				Debug.LogWarning( "A SensorScript's Sensor Number is set to \"OFF\". This means the script is not" +
+				Debug.LogWarning( "A G4Sensor's Sensor Number is set to \"OFF\". This means the script is not" +
 					" processing any sensor data." );
 			}
 			
