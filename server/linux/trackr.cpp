@@ -15,7 +15,7 @@
 #include <sys/poll.h>
 #include <cmath>
 #include <pthread.h>
-
+#include <sched.h>
 
 using namespace std;
 
@@ -255,6 +255,7 @@ void run_tracker() {
 	while (polling_active){
 		// poll and update the common variable
 		get_sample(sysId, hubs);
+		sched_yield(); // allow others to run - can't sleep because the g4 has crapped up signals.
 	}
 	g4_close_tracker();
 	cout << "Trackr stopped" << endl;
