@@ -62,7 +62,7 @@ Field 21:  Sensor 3 z-rotation / roll (degrees)
 ## Examples
 Withing the `/client` there are several examples for you to build on
 
-- cpp (windows and linux) - creates a simple socket connection and outputs the server responses
-- C# - creates a simple socket connection and outputs the server responses
-- js - Contains two folders - `g4` and `nodewebkit`.  The `g4` folder is the source code for the npm module (also available though `npm install g4` - see [details](https://www.npmjs.com/package/g4)) which connects to a local server and can be used to provide tracking data to a nodejs application.  The nodewebkit folder contains an [nw](http://nwjs.io/) application that uses the g4 module to display tracked cars using [Three.js](http://threejs.org/)
-- unity - a set of scripts that can be added to a unity project to add tracking data
+- **C++ (windows and linux)** - creates a simple socket connection and outputs the server responses
+- **C#** - creates a simple socket connection and outputs the server responses
+- **js** - Contains two folders - `g4` and `nodewebkit`.  The `g4` folder is the source code for the npm module (also available though `npm install g4` - see [details](https://www.npmjs.com/package/g4)) which connects to a local server and can be used to provide tracking data to a nodejs application.  The nodewebkit folder contains an [nw](http://nwjs.io/) application that uses the g4 module to display tracked cars using [Three.js](http://threejs.org/)
+- **unity** - a set of scripts that can be added to a Unity project to add tracking data
