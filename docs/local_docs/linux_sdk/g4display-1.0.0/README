@@ -1,6 +1,0 @@
-This application requires GTK+-2.0 and G4Track development libraries to build and run.
-
-Use the usual "./configure && make" commands to build on your system.  Then run "sudo make install".
-This will install an executable titled g4display on your system.
-
-Send issues/suggestions to help@polhemus.com

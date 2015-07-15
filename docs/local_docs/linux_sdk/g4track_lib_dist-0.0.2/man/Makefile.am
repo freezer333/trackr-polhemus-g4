@@ -1,1 +1,0 @@
-dist_man3_MANS= g4_close_tracker.3 g4_get_frame_data.3 G4SrcCfgLib.3 G4_CMD_BLOCK_STRUCT.3 g4_get_freq_sn_from_attr.3 G4_SRC_DATA_STRUCT.3 G4_CMD_DATA_STRUCT.3 g4_init_sys.3 G4_SRC_MAP.3 G4_CMD_STRUCT.3 g4_read_source_cfg_file.3 G4Track.3 g4_create_source_cfg_file.3  G4_SENFRAMEDATA.3 G4_FRAMEDATA.3 g4_set_query.3
