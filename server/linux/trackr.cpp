@@ -16,11 +16,13 @@
 #include <cmath>
 #include <pthread.h>
 #include <sched.h>
+#include <time.h>
 
 using namespace std;
 
 bool polling_active = true;
 bool serving_active = true;
+bool client_connected = false;
 bool trackr_online = false;
 struct po_sample sensor_p_o_records[G4_MAX_SENSORS_PER_HUB];
 pthread_spinlock_t spinlock;
@@ -100,8 +102,7 @@ void server() {
 	    /***********************************************************/
 	    if (rc < 0)
 	    {
-	      error("poll() failed");
-	      return;
+	      perror("poll() failed");
 	    }
 
 	    /***********************************************************/
@@ -110,6 +111,7 @@ void server() {
 	    else if (rc > 0) {
 	    	timeouts =0;
 	    	cout << "\tClient connected, serving requests..." << endl;
+	    	client_connected = true;
 	    	newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 		    if (newsockfd < 0)  {
 		      	error("ERROR on accept");
@@ -139,7 +141,7 @@ void server() {
 		    }
 
 		    cout << "\tClient disconnected." << endl;
-		    
+		    client_connected = false;
 		}
 		else {
 			timeouts++;
@@ -209,28 +211,13 @@ void get_sample(int sysId, int hubs) {
   	pthread_spin_lock(&spinlock);
   	for ( int a = 0; a < G4_MAX_SENSORS_PER_HUB; a++ ) {
 	  	if (fd->stationMap & (0x01<<a)){
-	  		/*if ( abs(fd->sfd[a].pos[0]) > 0) {
-	  			len=sprintf(buf,"Hub %d, Sensor %d, %u --  %.3f  %.3f  %.3f | %.3f  %.3f  %.3f\n",fd->hub,a+1,
-	      	  	  fd->frame,fd->sfd[a].pos[0],fd->sfd[a].pos[1],fd->sfd[a].pos[2],fd->sfd[a].ori[0],
-	      	  	  fd->sfd[a].ori[1],fd->sfd[a].ori[2]);
-	    		fprintf(stderr, "%s\n", buf);
-	    	}*/
-
 			sensor_p_o_records[a].frame_number = fd->frame;
 			sensor_p_o_records[a].pos[0] = fd->sfd[a].pos[0];
 			sensor_p_o_records[a].pos[1] = fd->sfd[a].pos[1];
 			sensor_p_o_records[a].pos[2] = fd->sfd[a].pos[2];
-			/* Holy shit.  ori[0] is z, ori[1] is y, ori[2] is x.  
-			   Nice.  
-			   Reversing this so its in the customary x/y/z order for clients connecting.
-			   Where's the tylenol.
-			*/
 			sensor_p_o_records[a].ori[0] = to_radians(fd->sfd[a].ori[2]);
 			sensor_p_o_records[a].ori[1] = to_radians(fd->sfd[a].ori[1]);
 			sensor_p_o_records[a].ori[2] = to_radians(fd->sfd[a].ori[0]);
-			
-			
-
 	    }
 	}
 	pthread_spin_unlock(&spinlock);
@@ -238,27 +225,42 @@ void get_sample(int sysId, int hubs) {
   	delete[] fd;
 }
 
+void snooze() {
+	struct timespec tim;
+   	tim.tv_sec  = 0;
+	tim.tv_nsec = 500000000L;
+	nanosleep(&tim, NULL);
+}
 void run_tracker() {
 	const char* src_file=G4C_PATH;
 	int sysId;
 	int res;
 
-	res=g4_init_sys(&sysId,src_file,NULL);
-	if (res!=G4_ERROR_NONE) {
-		cerr << "Connection to g4 failed - " << res << endl;
-		return;
-	}
-	cout << "Connected Successfully to G4 - system id = " << sysId << endl;
-	int hubs = get_hubs(sysId);
-	cout << "Found " << hubs << " hubs." << endl;
+	while ( polling_active ) {
 
-	while (polling_active){
-		// poll and update the common variable
-		get_sample(sysId, hubs);
-		sched_yield(); // allow others to run - can't sleep because the g4 has crapped up signals.
+		while (polling_active && !client_connected) {
+			snooze();
+		}
+
+		res=g4_init_sys(&sysId,src_file,NULL);
+		if (res!=G4_ERROR_NONE) {
+			cerr << "Connection to g4 failed - " << res << endl;
+			return;
+		}
+		cout << "Trackr started" << endl;
+		int hubs = get_hubs(sysId);
+		cout << "Found " << hubs << " hubs." << endl;
+
+		while (polling_active && client_connected){
+			// poll and update the common variable
+			get_sample(sysId, hubs);
+			sched_yield(); // allow others to run - can't sleep because the g4 has crapped up signals.
+		}
+		trackr_online = false;
+		g4_close_tracker();
+		cout << "Trackr suspended until client connects." << endl;
 	}
-	g4_close_tracker();
-	cout << "Trackr stopped" << endl;
+	cout << "Shutting down..." << endl;
 }
 
 
